@@ -292,7 +292,7 @@
         <button class="modal-x" data-close aria-label="Close">${svg('<path d="M6 6l12 12M18 6 6 18"/>', { sw: 2 })}</button>
         <div class="modal-actions">
           <button class="modal-share" data-share>${svg('<path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>', { sw: 1.8 })} Share</button>
-          <button class="modal-share" data-fav2="${l.id}">${svg('<path d="M12 21s-7-5-9.5-9C.8 9 2 5.7 5 5.7c1.9 0 3.1 1.1 3.7 2.2.6-1.1 1.8-2.2 3.7-2.2 3 0 4.2 3.3 2.5 6.3C19 16 12 21 12 21Z"/>', { sw: 1.8, fill: fav ? "var(--rausch)" : "none" })} ${fav ? "Saved" : "Save"}</button>
+          <button class="modal-share" data-fav2="${l.id}">${svg('<path d="M12 21s-7-5-9.5-9C.8 9 2 5.7 5 5.7c1.9 0 3.1 1.1 3.7 2.2.6-1.1 1.8-2.2 3.7-2.2 3 0 4.2 3.3 2.5 6.3C19 16 12 21 12 21Z"/>', { sw: 1.8, fill: fav ? "var(--brand)" : "none" })} ${fav ? "Saved" : "Save"}</button>
         </div>
       </div>
       <div class="modal-body">
