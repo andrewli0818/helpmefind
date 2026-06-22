@@ -151,6 +151,9 @@
       <p class="view-sub" id="viewSub"></p>
     </div>
 
+    <!-- active filter chips -->
+    <div class="filter-chips" id="filterChips" hidden></div>
+
     <!-- results bar (results / saved / map) -->
     <div class="results-bar" id="resultsBar" hidden>
       <p id="resultCount" class="result-count"></p>
@@ -251,6 +254,26 @@
   <!-- ===================== OVERLAYS ===================== -->
   <div class="modal-root" id="modalRoot" hidden></div>
   <div class="toast" id="toast" hidden></div>
+
+  <!-- mobile bottom nav -->
+  <nav class="botnav" id="botnav" aria-label="Primary">
+    <button data-bn="home" class="is-active">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 11 12 4l8 7M6 9.5V20h12V9.5M10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Explore</span>
+    </button>
+    <button data-bn="map">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4zm0 0v13m6-10.5v13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      <span>Map</span>
+    </button>
+    <button data-bn="saved">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 20s-7-4.6-9.3-8.7C1.2 8.3 2.6 5 5.7 5c2 0 3.4 1.2 4.1 2.4C10.6 6.2 12 5 14 5c3.1 0 4.5 3.3 3 6.3C19 15.4 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+      <span>Saved</span>
+    </button>
+    <button data-bn="requests">
+      <svg viewBox="0 0 24 24" width="22" height="22"><rect x="4" y="5" width="16" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Trips</span>
+    </button>
+  </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>

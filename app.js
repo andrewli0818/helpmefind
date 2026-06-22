@@ -125,7 +125,7 @@
     view: "home",      // home | results | saved | requests
     layout: "list",    // list | map  (within results/saved)
     type: "any", category: "all", where: "", kind: "any", from: "", to: "",
-    sort: "recommended", maxPrice: null,
+    sort: "recommended", maxPrice: null, maxMinutes: null, amen: new Set(),
     favs: new Set(load(FAV_KEY)),
     requests: load(REQ_KEY),
   };
@@ -171,6 +171,8 @@
       if (state.kind !== "any" && l.kind !== state.kind) return false;
       if (state.category !== "all" && !l.cats.includes(state.category)) return false;
       if (state.maxPrice && l.price > state.maxPrice) return false;
+      if (state.maxMinutes && l.minutes > state.maxMinutes) return false;
+      if (state.amen.size && ![...state.amen].every((a) => l.amenities.includes(a))) return false;
       if (w) {
         const hay = `${l.area} ${l.city} ${l.transit} ${KIND_LABEL[l.kind]} ${TYPE_LABEL[l.type]}`.toLowerCase();
         if (!hay.includes(w)) return false;
@@ -192,7 +194,7 @@
     return out;
   }
   const hasActiveFilter = () =>
-    state.category !== "all" || state.type !== "any" || state.kind !== "any" || !!state.where || !!state.from || !!state.to || state.maxPrice != null;
+    state.category !== "all" || state.type !== "any" || state.kind !== "any" || !!state.where || !!state.from || !!state.to || state.maxPrice != null || state.maxMinutes != null || state.amen.size > 0;
   const currentList = () => state.view === "saved" ? LISTINGS.filter((l) => state.favs.has(l.id)) : filtered();
 
   /* ---------- card ---------- */
@@ -352,8 +354,45 @@
     }
   }
 
+  /* ---------- active filter chips ---------- */
+  function renderChips() {
+    const c = $("#filterChips");
+    if (state.view !== "results") { c.hidden = true; c.innerHTML = ""; return; }
+    const chips = [];
+    if (state.type !== "any") chips.push(["type", TYPE_LABEL[state.type]]);
+    if (state.kind !== "any") chips.push(["kind", KIND_LABEL[state.kind]]);
+    if (state.category !== "all") chips.push(["category", CATS.find((x) => x.id === state.category).label]);
+    if (state.where) chips.push(["where", `“${state.where}”`]);
+    if (state.maxPrice) chips.push(["maxPrice", `≤ ${fmt(state.maxPrice)}`]);
+    if (state.maxMinutes) chips.push(["maxMinutes", `≤ ${state.maxMinutes} min to EHL`]);
+    if (state.from) chips.push(["from", `from ${fmtDate(state.from)}`]);
+    if (state.to) chips.push(["to", `until ${fmtDate(state.to)}`]);
+    state.amen.forEach((a) => chips.push(["amen:" + a, AMEN_LABEL[a] || a]));
+    if (!chips.length) { c.hidden = true; c.innerHTML = ""; return; }
+    c.hidden = false;
+    c.innerHTML = chips.map(([k, lab]) => `<button class="fchip" data-rm="${k}">${lab}<span aria-hidden="true">✕</span></button>`).join("") + `<button class="fchip clear" data-rm="all">Clear all</button>`;
+  }
+  function removeFilter(k) {
+    if (k === "all") { resetFilters(); route(); return; }
+    if (k.indexOf("amen:") === 0) state.amen.delete(k.slice(5));
+    else if (k === "type") state.type = "any";
+    else if (k === "kind") state.kind = "any";
+    else if (k === "category") state.category = "all";
+    else if (k === "where") state.where = "";
+    else if (k === "maxPrice") state.maxPrice = null;
+    else if (k === "maxMinutes") state.maxMinutes = null;
+    else if (k === "from") state.from = "";
+    else if (k === "to") state.to = "";
+    route();
+  }
+  function updateBotnav() {
+    let active = ({ home: "home", results: "home", saved: "saved", requests: "requests" })[state.view] || "home";
+    if (state.view === "results" && state.layout === "map") active = "map";
+    document.querySelectorAll("#botnav [data-bn]").forEach((b) => b.classList.toggle("is-active", b.dataset.bn === active));
+  }
+
   function render() {
-    renderCats(); setChrome(); syncControls(); updateSavedCount();
+    renderCats(); setChrome(); syncControls(); renderChips(); updateBotnav(); updateSavedCount();
     if (state.view === "home") { renderHome(); $("#empty").hidden = true; return; }
     if (state.view === "requests") { renderRequests(); $("#empty").hidden = true; return; }
     const list = currentList();
@@ -365,7 +404,7 @@
 
   /* ---------- navigation ---------- */
   function resetFilters() {
-    Object.assign(state, { type: "any", category: "all", where: "", kind: "any", from: "", to: "", maxPrice: null, sort: "recommended", layout: "list" });
+    Object.assign(state, { type: "any", category: "all", where: "", kind: "any", from: "", to: "", maxPrice: null, maxMinutes: null, amen: new Set(), sort: "recommended", layout: "list" });
   }
   function scrollToContent() {
     if (state.view === "home") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
@@ -415,6 +454,7 @@
   mainEl.addEventListener("click", (e) => {
     const fav = e.target.closest("[data-fav]"); if (fav) { e.stopPropagation(); toggleFav(+fav.dataset.fav); return; }
     const cz = e.target.closest("[data-cz]"); if (cz) { e.stopPropagation(); doCz(cz); return; }
+    const rm = e.target.closest("[data-rm]"); if (rm) { removeFilter(rm.dataset.rm); return; }
     const hc = e.target.closest(".hchip"); if (hc) { applyTerm(hc.dataset.term); return; }
     const sa = e.target.closest("[data-seeall]"); if (sa) { applySeeAll(JSON.parse(sa.dataset.seeall)); return; }
     const go = e.target.closest("[data-go]"); if (go) { nav(go.dataset.go); return; }
@@ -437,6 +477,42 @@
     let out = "";
     for (let i = 0; i < count; i++) { const f = FLATMATES[(k + i) % FLATMATES.length]; out += `<div class="fm"><span class="fm-av">${f[0]}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></div>`; }
     return out;
+  }
+  const REVIEWERS = [["Camille", "BOSC ’25"], ["Liam", "MIH ’24"], ["Sofia", "BOSC ’26"], ["Noah", "Master ’24"], ["Yuki", "Exchange"], ["Elena", "BOSC ’25"], ["Tom", "MIH ’25"], ["Aïcha", "BOSC ’26"]];
+  const REVIEW_TXT = [
+    "Super close to campus and the host replied within minutes. Room was exactly like the photos.",
+    "Great value for the area and lovely flatmates — the bus to EHL stops right outside.",
+    "Clean, quiet and perfect for studying. Would happily stay again next semester.",
+    "Short commute and close to everything. The host was really flexible on my move-in dates.",
+    "Bright room, fast wifi and bills already sorted. Ideal for an internship semester.",
+    "Easiest housing search I've had at EHL — and no agency fees made a real difference.",
+  ];
+  const REV_CATS = ["Cleanliness", "Location", "Value", "Host"];
+  const MONTHS_S = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  function reviewsHTML(l) {
+    if (!l.reviews) return `<div class="rev-empty">${icon("new")}<span>New listing — no reviews yet. Be the first to stay here.</span></div>`;
+    const bars = REV_CATS.map((c, i) => {
+      const v = Math.max(4.2, Math.min(5, l.rating + (((l.id * (i + 1)) % 5) - 2) / 20));
+      return `<div class="rev-bar"><span>${c}</span><div class="rev-track"><i style="width:${(v / 5) * 100}%"></i></div><b>${v.toFixed(1)}</b></div>`;
+    }).join("");
+    const k = l.id % REVIEWERS.length, t = l.id % REVIEW_TXT.length;
+    let cards = "";
+    for (let i = 0; i < 3; i++) {
+      const r = REVIEWERS[(k + i * 3) % REVIEWERS.length], txt = REVIEW_TXT[(t + i) % REVIEW_TXT.length];
+      cards += `<div class="rev"><div class="rev-top"><span class="rev-av">${r[0][0]}</span><div><b>${r[0]}</b><p>${r[1]} · ${MONTHS_S[(l.id + i) % 6]} 2026</p></div></div><div class="rev-stars">${star.repeat(5)}</div><p class="rev-txt">${txt}</p></div>`;
+    }
+    return `<div class="rev-head"><span class="rev-score">${star} ${l.rating.toFixed(2)}</span><span class="sep">·</span><span>${l.reviews} student reviews</span></div><div class="rev-bars">${bars}</div><div class="rev-list">${cards}</div>`;
+  }
+  function gtkHTML(l) {
+    const rows = [
+      ["Lease", l.to ? "Sublet until " + fmtDate(l.to) : "From 6 months / 1 semester"],
+      ["Deposit", fmt(l.price * 2) + " (≈ 2 months)"],
+      ["Bills", l.type === "flatshare" ? "Usually shared & included" : "Not included (~CHF 120/mo)"],
+      ["Furnished", l.amenities.includes("furnished") ? "Yes — move-in ready" : "Unfurnished"],
+      ["Available", fmtDate(l.from)],
+      ["Best for", l.guests > 1 ? l.guests + " people / sharing" : "1 student"],
+    ];
+    return rows.map((r) => `<div class="gtk-item"><b>${r[0]}</b><p>${r[1]}</p></div>`).join("");
   }
 
   function openModal(id) {
@@ -479,6 +555,10 @@
             ${l.type === "flatshare" ? `<div class="flatmates"><h3 class="amen-title">Your future flatmates</h3><div class="fm-list">${flatmatesHTML(l)}</div></div>` : ""}
             <h3 class="amen-title">What this place offers</h3>
             <div class="amens">${amens}</div>
+            <h3 class="amen-title">Good to know</h3>
+            <div class="gtk">${gtkHTML(l)}</div>
+            <h3 class="amen-title">${l.reviews ? "Student reviews" : "Reviews"}</h3>
+            <div class="reviews">${reviewsHTML(l)}</div>
             <div class="mc-map">
               <h3 class="amen-title">Where you'll be</h3>
               <div id="detailMap" class="detail-map"></div>
@@ -579,6 +659,14 @@
   $(".logo").addEventListener("click", (e) => { e.preventDefault(); goHome(); });
   $("#savedBtn").addEventListener("click", goSaved);
   $("#globeBtn").addEventListener("click", () => toast("Language: English · Currency: CHF (demo)"));
+  $("#botnav").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-bn]"); if (!b) return;
+    const t = b.dataset.bn;
+    if (t === "home") goHome();
+    else if (t === "map") { resetFilters(); state.view = "results"; state.layout = "map"; render(); scrollToContent(); }
+    else if (t === "saved") goSaved();
+    else if (t === "requests") goRequests();
+  });
 
   /* ---------- profile menu ---------- */
   const menu = $("#profileMenu");
@@ -657,32 +745,65 @@
         <button class="primary-btn" data-submit="${mode}" type="button">${isSignup ? "Create account" : "Log in"}</button>
       </form>`);
   }
+  function filtersCount(form) {
+    const p = +form.price.value, m = +form.mins.value, k = form.kind.value;
+    const amen = [...form.querySelectorAll('input[name="amen"]:checked')].map((c) => c.value);
+    return LISTINGS.filter((l) => {
+      if (k !== "any" && l.kind !== k) return false;
+      if (p < 2000 && l.price > p) return false;
+      if (m < 40 && l.minutes > m) return false;
+      if (amen.length && !amen.every((a) => l.amenities.includes(a))) return false;
+      return true;
+    }).length;
+  }
   function openFiltersSheet() {
+    const A = [["furnished", "Furnished"], ["wifi", "Fast wifi"], ["wash", "Washing machine"], ["dish", "Dishwasher"], ["bath", "Private bathroom"], ["lake", "Lake view"], ["parking", "Parking"], ["bike", "Bike storage"]];
     sheet(`
       <h1 class="modal-h1">Filters</h1>
-      <p class="lede">Narrow down to your perfect student stay.</p>
+      <p class="lede">Dial in your perfect student stay near EHL.</p>
       <form id="filtForm">
-        <div class="field">
-          <label>Max budget: <b id="priceOut">${state.maxPrice ? fmt(state.maxPrice) : "Any"}</b> / month</label>
-          <input name="price" type="range" min="600" max="2000" step="50" value="${state.maxPrice || 2000}" style="width:100%" oninput="document.getElementById('priceOut').textContent = this.value>=2000?'Any':'CHF '+(+this.value).toLocaleString('de-CH')">
-        </div>
         <div class="field"><label>Place type</label>
           <select name="kind">
-            <option value="any"${state.kind === "any" ? " selected" : ""}>Any</option>
+            <option value="any"${state.kind === "any" ? " selected" : ""}>Any place</option>
             <option value="room"${state.kind === "room" ? " selected" : ""}>Private room</option>
             <option value="studio"${state.kind === "studio" ? " selected" : ""}>Studio</option>
             <option value="apartment"${state.kind === "apartment" ? " selected" : ""}>Whole apartment</option>
           </select>
         </div>
-        <button class="primary-btn" data-submit="filters" type="button">Show stays</button>
+        <div class="field"><label>Max rent: <b id="pOut"></b> / month</label>
+          <input name="price" type="range" min="600" max="2000" step="50" value="${state.maxPrice || 2000}"></div>
+        <div class="field"><label>Max time to EHL: <b id="mOut"></b></label>
+          <input name="mins" type="range" min="5" max="40" step="1" value="${state.maxMinutes || 40}"></div>
+        <div class="field"><label>Must have</label>
+          <div class="amen-grid">${A.map(([v, lab]) => `<label class="amen-check"><input type="checkbox" name="amen" value="${v}" ${state.amen.has(v) ? "checked" : ""}><span>${lab}</span></label>`).join("")}</div>
+        </div>
+        <div class="filt-actions">
+          <button type="button" class="ghost-btn" id="filtClear">Clear all</button>
+          <button class="primary-btn" data-submit="filters" type="button" id="filtApply">Show stays</button>
+        </div>
       </form>`);
+    const form = $("#filtForm");
+    const upd = () => {
+      const p = +form.price.value, m = +form.mins.value;
+      $("#pOut").textContent = p >= 2000 ? "Any" : fmt(p);
+      $("#mOut").textContent = m >= 40 ? "Any" : m + " min";
+      $("#filtApply").textContent = `Show ${filtersCount(form)} stays`;
+    };
+    form.addEventListener("input", upd); upd();
+    $("#filtClear").addEventListener("click", () => {
+      form.kind.value = "any"; form.price.value = 2000; form.mins.value = 40;
+      form.querySelectorAll('input[name="amen"]').forEach((c) => (c.checked = false)); upd();
+    });
   }
   $("#filtersBtn").addEventListener("click", openFiltersSheet);
 
   function handleSheetSubmit(kind) {
     if (kind === "filters") {
-      const d = Object.fromEntries(new FormData($("#filtForm")));
-      state.maxPrice = +d.price >= 2000 ? null : +d.price; state.kind = d.kind;
+      const form = $("#filtForm");
+      state.kind = form.kind.value;
+      state.maxPrice = +form.price.value >= 2000 ? null : +form.price.value;
+      state.maxMinutes = +form.mins.value >= 40 ? null : +form.mins.value;
+      state.amen = new Set([...form.querySelectorAll('input[name="amen"]:checked')].map((c) => c.value));
       closeOverlay(); route(); return;
     }
     if (kind === "host") {
