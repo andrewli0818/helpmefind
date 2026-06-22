@@ -1,6 +1,7 @@
 /* ============================================================
-   HelpMeFind — student stays near EHL
-   Single-file app: data, rendering, search/filter, modals.
+   HelpMeFind — student housing near EHL
+   Front-end demo: views/navigation, real maps (Leaflet/OSM),
+   curated home, saved + viewing-request flows.
    ============================================================ */
 (() => {
   "use strict";
@@ -22,7 +23,6 @@
     new: '<path d="M12 3.5 13.9 9 19.5 9.2 15.2 12.8 16.6 18.4 12 15.2 7.4 18.4 8.8 12.8 4.5 9.2 10.1 9Z"/>',
     whole: '<rect x="4.5" y="3.5" width="15" height="17" rx="1.5"/><path d="M8 7h2.5M13.5 7H16M8 11h2.5M13.5 11H16M8 15h2.5M13.5 15H16"/><path d="M10.5 20.5v-3h3v3"/>',
     quiet: '<path d="M11 5 6.5 8.5H3.5v7h3L11 19V5Z"/><path d="M15.5 9.5a4 4 0 0 1 0 5M18 7a7.5 7.5 0 0 1 0 10"/>',
-    /* amenity icons */
     wifi: '<path d="M5 12.5a10 10 0 0 1 14 0M7.7 15.5a6 6 0 0 1 8.6 0M10.5 18.4a2 2 0 0 1 3 0"/><circle cx="12" cy="20" r=".6" fill="currentColor"/>',
     wash: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><circle cx="12" cy="13" r="4"/><circle cx="8" cy="6.5" r=".5" fill="currentColor"/><circle cx="10" cy="6.5" r=".5" fill="currentColor"/>',
     dish: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/><circle cx="7" cy="6.5" r=".4" fill="currentColor"/><path d="M12 12v5"/>',
@@ -35,25 +35,21 @@
     parking: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9.5 16V8h3a2.5 2.5 0 0 1 0 5h-3"/>',
     elevator: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M12 3.5v17"/><path d="M9 9l-1.3 1.6h2.6L9 9ZM15 15l1.3-1.6h-2.6L15 15Z" fill="currentColor" stroke="none"/>',
     check: '<path d="M5 12.5 10 17l9-10"/>',
+    pin: '<path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10Z"/><circle cx="12" cy="11" r="2"/>',
   };
   const icon = (name) => svg(ICONS[name] || ICONS.check);
   const star = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.1 6.6.7-5 4.5 1.4 6.5L12 17.6 6.1 20.8l1.4-6.5-5-4.5 6.6-.7z"/></svg>';
   const heartSvg = '<svg viewBox="0 0 24 24"><path class="heart" d="M12 21s-7.5-4.7-10-9.3C.8 9 2 5.5 5.2 5.5c2 0 3.2 1.1 3.8 2.2.6-1.1 1.8-2.2 3.8-2.2 3.2 0 4.4 3.5 3.2 6.2C18.5 16.3 12 21 12 21z"/></svg>';
   const houseGhost = svg('<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.8V20h13V9.8"/>', { sw: 1.4 });
 
-  /* ---------- placeholder image gradients ---------- */
+  /* ---------- placeholder photos ---------- */
   const GRADS = [
-    "linear-gradient(135deg,#FFD9C0,#FFB199)",
-    "linear-gradient(135deg,#C2E9FB,#A1C4FD)",
-    "linear-gradient(135deg,#FBC2EB,#A18CD1)",
-    "linear-gradient(135deg,#D4FC79,#96E6A1)",
-    "linear-gradient(135deg,#FFF1EB,#ACE0F9)",
-    "linear-gradient(135deg,#FDCBF1,#C3A6E6)",
-    "linear-gradient(135deg,#FAD0C4,#FF9A9E)",
-    "linear-gradient(135deg,#A8EDEA,#FED6E3)",
+    "linear-gradient(135deg,#FFE0B2,#FFCC80)", "linear-gradient(135deg,#FFE9C7,#FFD59E)",
+    "linear-gradient(135deg,#FDE7C8,#F7C77E)", "linear-gradient(135deg,#FFF1D6,#FFD79A)",
+    "linear-gradient(135deg,#FCE3C0,#F6B868)", "linear-gradient(135deg,#FFEAD0,#FFC98A)",
+    "linear-gradient(135deg,#FBE2B6,#EFAF63)", "linear-gradient(135deg,#FFEEDB,#FFCF99)",
   ];
   const gradFor = (n) => GRADS[Math.abs(n) % GRADS.length];
-  // curated interior/apartment stock photos (Unsplash). Used as fake listing pics for now.
   const UNSPLASH = [
     "1502672260266-1c1ef2d93688", "1522708323590-d24dbb6b0267", "1560448204-e02f11c3d0e2",
     "1493809842364-78817add7ffb", "1505693416388-ac5ce068fe85", "1484154218962-a197022b5858",
@@ -62,7 +58,6 @@
     "1502005229762-cf1b2da7c5d6", "1586023492125-27b2c045efd7", "1598928506311-c55ded91a20c",
     "1583847268964-b28dc8f51f92", "1505691938895-1758d7feb511", "1556228453-efd6c1ff04f6",
   ];
-  // Image with graceful fallback chain: Unsplash photo -> Picsum -> soft gradient (offline).
   const photo = (id, i, w = 640, h = 600) => {
     const u = UNSPLASH[(id * 3 + i) % UNSPLASH.length];
     const us = `https://images.unsplash.com/photo-${u}?auto=format&fit=crop&w=${w}&q=70`;
@@ -88,10 +83,10 @@
     { id: "new", label: "New", icon: "new" },
   ];
 
-  /* ---------- listings ---------- */
   const TYPE_LABEL = { rent: "Rent", sublease: "Sublease", flatshare: "Flatshare" };
   const KIND_LABEL = { room: "Private room", studio: "Studio", apartment: "Whole apartment" };
 
+  /* ---------- listings ---------- */
   let LISTINGS = [
     { id: 1, area: "Épalinges", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1290, beds: 1, baths: 1, guests: 2, rating: 4.92, reviews: 64, minutes: 8, transit: "Bus 64 to campus", fav: true, from: "2026-08-01", to: null, host: { name: "Verdi Immobilier", initials: "VI", student: false, since: 2019 }, cats: ["campus", "studio", "furnished", "transit", "new"], amenities: ["wifi", "furnished", "wash", "kitchen", "desk", "heat", "bath", "elevator"], desc: "Bright, fully furnished studio a short bus ride from EHL. Renovated kitchenette, fast fibre wifi and a study nook by the window. Ideal for a focused semester." },
     { id: 2, area: "Le Chalet-à-Gobet", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 4.5", price: 920, beds: 1, baths: 1, guests: 1, rating: 4.78, reviews: 38, minutes: 4, transit: "5 min walk to campus", fav: true, from: "2026-09-01", to: null, host: { name: "Léa", initials: "L", student: true, since: 2025 }, cats: ["campus", "shared", "furnished", "quiet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "bike", "desk"], desc: "Private room in a friendly 4-person EHL flat, literally next to campus. Big shared kitchen, balcony and a garden. Two current flatmates are 2nd-year BOSC students." },
@@ -104,65 +99,71 @@
     { id: 9, area: "Épalinges", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1350, beds: 1, baths: 1, guests: 2, rating: 4.88, reviews: 47, minutes: 9, transit: "Bus 64 / M2 Croisettes", fav: false, from: "2026-08-01", to: null, host: { name: "Helvetia Living", initials: "HL", student: false, since: 2020 }, cats: ["campus", "studio", "furnished", "transit", "new"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "desk", "elevator", "bath"], desc: "Modern studio in a new Épalinges building, minutes from EHL by bus. In-unit laundry, dishwasher and a proper desk. Move-in ready for the new academic year." },
     { id: 10, area: "Vevey", city: "Riviera", type: "sublease", kind: "apartment", rooms: "2.5 rooms", price: 1380, beds: 2, baths: 1, guests: 3, rating: 4.91, reviews: 36, minutes: 35, transit: "Direct train to Lausanne", fav: false, from: "2026-07-10", to: "2026-12-31", host: { name: "Chloé", initials: "C", student: true, since: 2023 }, cats: ["lake", "whole", "furnished", "short"], amenities: ["wifi", "furnished", "lake", "wash", "dish", "kitchen", "balcony", "bath"], desc: "Subletting our bright 2.5 in Vevey for one semester — lake and Chaplin statue around the corner. Direct trains to Lausanne. Best shared between two friends." },
     { id: 11, area: "Crissier", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1150, beds: 1, baths: 1, guests: 1, rating: 4.66, reviews: 22, minutes: 25, transit: "Bus + M1", fav: false, from: "2026-09-01", to: null, host: { name: "Gérance Léman", initials: "GL", student: false, since: 2017 }, cats: ["studio", "budget", "transit", "furnished"], amenities: ["wifi", "furnished", "wash", "kitchen", "parking", "heat"], desc: "Practical, well-priced studio near the big shopping centres in Crissier. Parking available, supermarket downstairs. Solid value for a no-fuss semester." },
-    { id: 12, area: "Chailly", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 4.5", price: 880, beds: 1, baths: 2, guests: 1, rating: 4.83, reviews: 41, minutes: 18, transit: "Bus 6 / 8", fav: true, from: "2026-08-20", to: null, host: { name: "Tom", initials: "T", student: true, since: 2024 }, cats: ["shared", "furnished", "quiet", "pet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "balcony", "desk"], desc: "Room in a beautiful Chailly flat with a south-facing balcony and two bathrooms. Quiet, green neighbourhood but quick bus into the centre. Cat already in residence 🐈." },
+    { id: 12, area: "Chailly", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 4.5", price: 880, beds: 1, baths: 2, guests: 1, rating: 4.83, reviews: 41, minutes: 18, transit: "Bus 6 / 8", fav: true, from: "2026-08-20", to: null, host: { name: "Tom", initials: "T", student: true, since: 2024 }, cats: ["shared", "furnished", "quiet", "pet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "balcony", "desk"], desc: "Room in a beautiful Chailly flat with a south-facing balcony and two bathrooms. Quiet, green neighbourhood but quick bus into the centre. Cat already in residence." },
     { id: 13, area: "Montreux", city: "Riviera", type: "rent", kind: "apartment", rooms: "2.5 rooms", price: 1740, beds: 2, baths: 1, guests: 3, rating: 4.93, reviews: 49, minutes: 38, transit: "Direct train to Lausanne", fav: false, from: "2026-08-01", to: null, host: { name: "Riviera Estates", initials: "RE", student: false, since: 2016 }, cats: ["lake", "whole", "furnished", "quiet"], amenities: ["wifi", "furnished", "lake", "wash", "dish", "kitchen", "balcony", "parking", "elevator", "bath"], desc: "Elegant apartment on the Montreux lakefront, walking distance to the Jazz Festival venues. A longer but scenic train commute. Share it and split the view." },
     { id: 14, area: "Le Mont-sur-Lausanne", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1240, beds: 1, baths: 1, guests: 2, rating: 4.81, reviews: 30, minutes: 12, transit: "Bus 8 / 60", fav: false, from: "2026-09-01", to: null, host: { name: "Dubois SA", initials: "DS", student: false, since: 2019 }, cats: ["campus", "studio", "furnished", "transit", "quiet", "new"], amenities: ["wifi", "furnished", "wash", "kitchen", "desk", "balcony", "heat"], desc: "New studio in Le Mont, one of the closest calm suburbs to EHL. Furnished with a comfy study setup and a small balcony. Quick bus links to campus and town." },
     { id: 15, area: "Lausanne Flon", city: "Lausanne", type: "sublease", kind: "room", rooms: "Room in 3.5", price: 990, beds: 1, baths: 1, guests: 1, rating: 4.74, reviews: 25, minutes: 25, transit: "All metro lines at Flon", fav: false, from: "2026-07-01", to: "2026-09-30", host: { name: "Ines", initials: "I", student: true, since: 2024 }, cats: ["shared", "transit", "short", "furnished"], amenities: ["wifi", "furnished", "wash", "kitchen", "elevator"], desc: "Summer sublet in the heart of Flon — bars, gym and every metro line at your door. Perfect for a summer internship in Lausanne. Three-person flat, fully furnished." },
     { id: 16, area: "Belmont-sur-Lausanne", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 5.5", price: 810, beds: 1, baths: 2, guests: 1, rating: 4.69, reviews: 31, minutes: 14, transit: "Bus 47 to campus", fav: false, from: "2026-09-01", to: null, host: { name: "Gabriel", initials: "G", student: true, since: 2023 }, cats: ["campus", "shared", "budget", "quiet", "pet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "bike", "parking", "balcony"], desc: "Big room in a house-share in Belmont, close to EHL and surrounded by fields. Garden, BBQ, parking and bikes. Five easy-going students, dog-friendly home." },
   ];
 
-  /* ---------- state ---------- */
-  const FAV_KEY = "hmf_favs";
-  const loadFavs = () => { try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY)) || []); } catch { return new Set(); } };
-  const state = {
-    type: "any",
-    category: "all",
-    where: "",
-    kind: "any",
-    from: "",
-    to: "",
-    sort: "recommended",
-    maxPrice: null,
-    favs: loadFavs(),
+  /* ---------- geo ---------- */
+  const EHL = { lat: 46.5527, lng: 6.6796 };
+  const COORDS = {
+    "Épalinges": [46.5556, 6.6694], "Le Chalet-à-Gobet": [46.5685, 6.6840], "Ouchy": [46.5070, 6.6260],
+    "Renens": [46.5390, 6.5870], "Pully": [46.5100, 6.6610], "Lausanne Centre": [46.5197, 6.6323],
+    "Lutry": [46.5030, 6.6870], "Prilly": [46.5350, 6.6030], "Vevey": [46.4628, 6.8419],
+    "Crissier": [46.5500, 6.5790], "Chailly": [46.5230, 6.6520], "Montreux": [46.4312, 6.9107],
+    "Le Mont-sur-Lausanne": [46.5560, 6.6370], "Lausanne Flon": [46.5210, 6.6300], "Belmont-sur-Lausanne": [46.5170, 6.6700],
   };
+  const setCoords = (l) => { const c = COORDS[l.area]; if (c) { l.lat = c[0]; l.lng = c[1]; } else { l.lat = EHL.lat + (((l.id * 7) % 9) - 4) / 120; l.lng = EHL.lng + (((l.id * 5) % 9) - 4) / 120; } };
+  LISTINGS.forEach(setCoords);
 
-  /* ---------- DOM refs ---------- */
+  /* ---------- state ---------- */
+  const FAV_KEY = "hmf_favs", REQ_KEY = "hmf_reqs";
+  const load = (k) => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
+  const state = {
+    view: "home",      // home | results | saved | requests
+    layout: "list",    // list | map  (within results/saved)
+    type: "any", category: "all", where: "", kind: "any", from: "", to: "",
+    sort: "recommended", maxPrice: null,
+    favs: new Set(load(FAV_KEY)),
+    requests: load(REQ_KEY),
+  };
+  const saveFavs = () => localStorage.setItem(FAV_KEY, JSON.stringify([...state.favs]));
+  const saveReqs = () => localStorage.setItem(REQ_KEY, JSON.stringify(state.requests));
+
+  /* ---------- DOM ---------- */
   const $ = (s, r = document) => r.querySelector(s);
-  const grid = $("#grid");
+  const show = (sel, cond) => { const el = $(sel); if (el) el.hidden = !cond; };
+  const mainEl = $("#main");
   const catsEl = $("#cats");
   const modalRoot = $("#modalRoot");
   const toastEl = $("#toast");
-  const fmt = (n) => "CHF " + n.toLocaleString("de-CH");
+  const fmt = (n) => "CHF " + n.toLocaleString("de-CH");
+  const fmtShort = (n) => n.toLocaleString("de-CH");
+  const byRec = (a, b) => (b._new ? 1 : 0) - (a._new ? 1 : 0) || b.rating * Math.log(b.reviews + 2) - a.rating * Math.log(a.reviews + 2);
 
   /* ---------- toast ---------- */
   let toastT;
   const toast = (msg) => {
-    toastEl.textContent = msg;
-    toastEl.hidden = false;
+    toastEl.textContent = msg; toastEl.hidden = false;
     requestAnimationFrame(() => toastEl.classList.add("show"));
     clearTimeout(toastT);
-    toastT = setTimeout(() => {
-      toastEl.classList.remove("show");
-      setTimeout(() => (toastEl.hidden = true), 280);
-    }, 3000);
+    toastT = setTimeout(() => { toastEl.classList.remove("show"); setTimeout(() => (toastEl.hidden = true), 280); }, 3200);
   };
 
-  /* ---------- categories render ---------- */
+  /* ---------- categories ---------- */
   function renderCats() {
     catsEl.innerHTML = CATS.map(
-      (c) =>
-        `<button class="cat ${state.category === c.id ? "is-active" : ""}" data-cat="${c.id}">${icon(c.icon)}<span>${c.label}</span></button>`
+      (c) => `<button class="cat ${state.category === c.id ? "is-active" : ""}" data-cat="${c.id}">${icon(c.icon)}<span>${c.label}</span></button>`
     ).join("");
   }
   catsEl.addEventListener("click", (e) => {
-    const b = e.target.closest(".cat");
-    if (!b) return;
-    state.category = b.dataset.cat;
-    renderCats();
-    render();
+    const b = e.target.closest(".cat"); if (!b) return;
+    state.category = b.dataset.cat; route();
   });
 
-  /* ---------- filtering + sorting ---------- */
+  /* ---------- filtering ---------- */
   function filtered() {
     const w = state.where.trim().toLowerCase();
     let out = LISTINGS.filter((l) => {
@@ -180,21 +181,24 @@
     });
     const s = state.sort;
     out.sort((a, b) => {
-      if (a._new && !b._new) return -1; // freshly-listed places pin to the top
+      if (a._new && !b._new) return -1;
       if (!a._new && b._new) return 1;
       if (s === "price-asc") return a.price - b.price;
       if (s === "price-desc") return b.price - a.price;
       if (s === "closest") return a.minutes - b.minutes;
       if (s === "rating") return b.rating - a.rating || b.reviews - a.reviews;
-      return b.rating * Math.log(b.reviews + 1) - a.rating * Math.log(a.reviews + 1); // recommended
+      return byRec(a, b);
     });
     return out;
   }
+  const hasActiveFilter = () =>
+    state.category !== "all" || state.type !== "any" || state.kind !== "any" || !!state.where || !!state.from || !!state.to || state.maxPrice != null;
+  const currentList = () => state.view === "saved" ? LISTINGS.filter((l) => state.favs.has(l.id)) : filtered();
 
   /* ---------- card ---------- */
   function cardHTML(l) {
     const fav = state.favs.has(l.id);
-    const n = 3; // slides per card
+    const n = 3;
     const slides = Array.from({ length: n }, (_, i) => `<div class="slide">${photo(l.id, i + 1)}</div>`).join("");
     const dots = Array.from({ length: n }, (_, i) => `<i class="${i === 0 ? "on" : ""}"></i>`).join("");
     return `
@@ -214,57 +218,208 @@
           <span class="card-rating">${l.reviews ? star + l.rating.toFixed(2) : "New"}</span>
         </div>
         <div class="card-sub">${l.rooms} · ${KIND_LABEL[l.kind]}</div>
-        <div class="card-sub dist">${svg('<path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10Z"/><circle cx="12" cy="11" r="2"/>', { sw: 1.5 })} ${l.minutes} min to EHL · ${l.transit}</div>
+        <div class="card-sub dist">${icon("pin")} ${l.minutes} min to EHL · ${l.transit}</div>
         <div class="card-price"><b>${fmt(l.price)}</b> <span class="per">/ month</span></div>
       </div>
     </article>`;
   }
 
-  function render() {
-    const list = filtered();
-    const empty = $("#empty");
-    if (!list.length) {
-      grid.innerHTML = "";
-      empty.hidden = false;
-    } else {
-      empty.hidden = true;
-      grid.innerHTML = list.map(cardHTML).join("");
-    }
-    const label = state.category !== "all" ? CATS.find((c) => c.id === state.category).label.toLowerCase() : "";
-    $("#resultCount").textContent =
-      `${list.length} ${list.length === 1 ? "stay" : "stays"}${label && label !== "all" ? " · " + label : ""} near EHL`;
+  /* ---------- curated home ---------- */
+  const SECTIONS = [
+    { title: "📍 Closest to campus", sub: "A quick walk or one bus to EHL", filter: (l) => l.minutes <= 15, sort: (a, b) => a.minutes - b.minutes, seeall: { category: "campus" } },
+    { title: "🔁 Fresh subleases", sub: "Take over a room for a semester abroad", filter: (l) => l.type === "sublease", sort: byRec, seeall: { type: "sublease" } },
+    { title: "👥 Flatshares looking for a flatmate", sub: "Move in with other students", filter: (l) => l.type === "flatshare", sort: byRec, seeall: { type: "flatshare" } },
+    { title: "💸 Budget rooms under CHF 900", sub: "Easy on the student wallet", filter: (l) => l.price < 900, sort: (a, b) => a.price - b.price, seeall: { category: "budget" } },
+    { title: "🌅 Lake views", sub: "Wake up to Lac Léman", filter: (l) => l.cats.includes("lake"), sort: byRec, seeall: { category: "lake" } },
+  ];
+  function renderHome() {
+    $("#homeSections").innerHTML = SECTIONS.map((sec) => {
+      const items = LISTINGS.filter(sec.filter).sort(sec.sort).slice(0, 8);
+      if (!items.length) return "";
+      return `<section class="row-sec">
+        <div class="row-head">
+          <div><h2>${sec.title}</h2><p>${sec.sub}</p></div>
+          <button class="see-all" data-seeall='${JSON.stringify(sec.seeall)}'>See all →</button>
+        </div>
+        <div class="row">${items.map(cardHTML).join("")}</div>
+      </section>`;
+    }).join("");
   }
 
-  /* ---------- carousel + fav + open (event delegation) ---------- */
-  grid.addEventListener("click", (e) => {
-    const favBtn = e.target.closest("[data-fav]");
-    if (favBtn) {
-      e.stopPropagation();
-      const id = +favBtn.dataset.fav;
-      if (state.favs.has(id)) state.favs.delete(id);
-      else { state.favs.add(id); }
-      favBtn.classList.toggle("is-fav");
-      localStorage.setItem(FAV_KEY, JSON.stringify([...state.favs]));
+  /* ---------- requests ---------- */
+  function renderRequests() {
+    const wrap = $("#requestsList");
+    $("#viewTitle").textContent = "Your viewing requests";
+    $("#viewSub").textContent = state.requests.length ? `${state.requests.length} request${state.requests.length > 1 ? "s" : ""} sent — hosts reply by email` : "";
+    if (!state.requests.length) {
+      wrap.innerHTML = `<div class="reqs-empty"><div class="reqs-empty-ic">${icon("check")}</div><h3>No viewing requests yet</h3><p>When you ask to view a place, it shows up here so you can keep track of who you've contacted.</p><button class="btn-outline" data-go="home">Browse stays</button></div>`;
       return;
     }
-    const cz = e.target.closest("[data-cz]");
-    if (cz) {
-      e.stopPropagation();
-      const media = cz.closest(".card-media");
-      const car = $(".card-carousel", media);
-      const total = car.children.length;
-      let idx = +media.dataset.idx;
-      idx += cz.dataset.cz === "next" ? 1 : -1;
-      idx = Math.max(0, Math.min(total - 1, idx));
-      media.dataset.idx = idx;
-      car.style.transform = `translateX(-${idx * 100}%)`;
-      $(".cz-btn.prev", media).disabled = idx === 0;
-      $(".cz-btn.next", media).disabled = idx === total - 1;
-      [...$(".dots", media).children].forEach((d, i) => d.classList.toggle("on", i === idx));
+    wrap.innerHTML = state.requests.map((r) => {
+      const l = LISTINGS.find((x) => x.id === r.id); if (!l) return "";
+      return `<div class="req-row" data-open="${l.id}">
+        <div class="req-thumb">${photo(l.id, 1, 220, 200)}</div>
+        <div class="req-info">
+          <b>${l.area}, ${l.city}</b>
+          <span>${TYPE_LABEL[l.type]} · ${l.rooms} · ${fmt(l.price)}/mo</span>
+          <span class="req-meta">Requested move-in ${fmtDate(r.from)} · sent to ${l.host.name}</span>
+        </div>
+        <div class="req-status">Requested</div>
+      </div>`;
+    }).join("");
+  }
+
+  /* ---------- map (Leaflet / OpenStreetMap) ---------- */
+  const TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const ATTR = '&copy; OpenStreetMap';
+  const campusDiv = () => L.divIcon({ className: "", html: '<div class="map-campus">🎓 EHL</div>', iconSize: [62, 26], iconAnchor: [31, 13] });
+  const priceDiv = (l) => L.divIcon({ className: "", html: `<div class="map-pin${state.favs.has(l.id) ? " fav" : ""}">${fmtShort(l.price)}</div>`, iconSize: [56, 26], iconAnchor: [28, 26] });
+  const mapPopup = (l) => `<div class="map-pop">
+      <div class="map-pop-img">${photo(l.id, 1, 260, 150)}</div>
+      <div class="map-pop-b"><b>${l.area}, ${l.city}</b>
+        <span>${TYPE_LABEL[l.type]} · ${l.rooms}</span>
+        <span class="map-pop-price">${fmt(l.price)}/mo · ${l.reviews ? "★ " + l.rating.toFixed(2) : "New"}</span>
+        <button class="map-pop-btn" onclick="HMF.open(${l.id})">View details</button>
+      </div></div>`;
+
+  let browseMap = null, detailMap = null;
+  function renderMap(list) {
+    const host = $("#browseMap");
+    if (!window.L) { host.innerHTML = '<div class="map-fallback">🗺️ The map needs an internet connection — it works on the live site.</div>'; return; }
+    if (browseMap) { browseMap.remove(); browseMap = null; }
+    host.innerHTML = "";
+    browseMap = L.map(host, { scrollWheelZoom: false }).setView([EHL.lat, EHL.lng], 12);
+    L.tileLayer(TILES, { maxZoom: 19, attribution: ATTR }).addTo(browseMap);
+    L.marker([EHL.lat, EHL.lng], { icon: campusDiv(), zIndexOffset: 1000 }).addTo(browseMap).bindPopup("<b>🎓 EHL Campus</b>");
+    const pts = [[EHL.lat, EHL.lng]];
+    list.forEach((l) => { if (l.lat == null) return; L.marker([l.lat, l.lng], { icon: priceDiv(l) }).addTo(browseMap).bindPopup(mapPopup(l), { maxWidth: 260, minWidth: 240 }); pts.push([l.lat, l.lng]); });
+    if (pts.length > 1) browseMap.fitBounds(pts, { padding: [55, 55] });
+    setTimeout(() => browseMap && browseMap.invalidateSize(), 90);
+  }
+  function initDetailMap(l) {
+    const host = document.getElementById("detailMap"); if (!host) return;
+    if (!window.L || l.lat == null) { host.innerHTML = `<div class="map-fallback">Approximate area: ${l.area}, ${l.city}.</div>`; return; }
+    if (detailMap) { detailMap.remove(); detailMap = null; }
+    detailMap = L.map(host, { scrollWheelZoom: false }).setView([l.lat, l.lng], 14);
+    L.tileLayer(TILES, { maxZoom: 19, attribution: ATTR }).addTo(detailMap);
+    L.circle([l.lat, l.lng], { radius: 380, color: "#F59E0B", weight: 2, fillColor: "#F59E0B", fillOpacity: .22 }).addTo(detailMap);
+    L.marker([EHL.lat, EHL.lng], { icon: campusDiv() }).addTo(detailMap).bindPopup("🎓 EHL Campus");
+    try { detailMap.fitBounds([[l.lat, l.lng], [EHL.lat, EHL.lng]], { padding: [45, 45], maxZoom: 14 }); } catch (e) {}
+    setTimeout(() => detailMap && detailMap.invalidateSize(), 130);
+  }
+
+  /* ---------- chrome / view switching ---------- */
+  function setChrome() {
+    const v = state.view, isList = (v === "results" || v === "saved");
+    const showMap = isList && state.layout === "map";
+    show("#hero", v === "home");
+    show("#how", v === "home");
+    show("#homeSections", v === "home");
+    show("#viewHead", v === "saved" || v === "requests");
+    show("#resultsBar", isList);
+    show("#requestsList", v === "requests");
+    show("#mapView", showMap);
+    show("#grid", isList && !showMap);
+    document.querySelectorAll("#viewToggle [data-vt]").forEach((b) => b.classList.toggle("is-active", b.dataset.vt === state.layout));
+  }
+  function syncControls() {
+    document.querySelectorAll("#typeToggle .type-pill").forEach((p) => p.classList.toggle("is-active", p.dataset.type === state.type));
+    $("#sortSel").value = state.sort; $("#qWho").value = state.kind;
+    $("#qWhere").value = state.where; $("#qFrom").value = state.from; $("#qTo").value = state.to;
+  }
+  function updateResultCount(list) {
+    if (state.view === "saved") {
+      $("#viewTitle").textContent = "Saved stays";
+      $("#viewSub").textContent = list.length ? `${list.length} place${list.length > 1 ? "s" : ""} you've kept` : "";
+      $("#resultCount").textContent = `${list.length} saved`;
       return;
     }
-    const card = e.target.closest(".card");
-    if (card) openModal(+card.dataset.id);
+    const cat = state.category !== "all" ? " · " + CATS.find((c) => c.id === state.category).label.toLowerCase() : "";
+    const ty = state.type !== "any" ? " · " + TYPE_LABEL[state.type].toLowerCase() : "";
+    $("#resultCount").textContent = `${list.length} ${list.length === 1 ? "stay" : "stays"}${cat}${ty} near EHL`;
+  }
+  function showEmpty(mode) {
+    $("#grid").innerHTML = "";
+    const e = $("#empty"); e.hidden = false;
+    if (mode === "saved") {
+      $("#emptyTitle").textContent = "No saved stays yet";
+      $("#emptyMsg").textContent = "Tap the ♥ on any listing to keep it here for later.";
+      $("#clearAll").textContent = "Browse all stays";
+    } else {
+      $("#emptyTitle").textContent = "No stays match your search";
+      $("#emptyMsg").textContent = "Try clearing some filters or widening your dates.";
+      $("#clearAll").textContent = "Clear all filters";
+    }
+  }
+
+  function render() {
+    renderCats(); setChrome(); syncControls(); updateSavedCount();
+    if (state.view === "home") { renderHome(); $("#empty").hidden = true; return; }
+    if (state.view === "requests") { renderRequests(); $("#empty").hidden = true; return; }
+    const list = currentList();
+    updateResultCount(list);
+    if (state.layout === "map") { $("#empty").hidden = true; renderMap(list); return; }
+    if (!list.length) { showEmpty(state.view === "saved" ? "saved" : "results"); }
+    else { $("#empty").hidden = true; $("#grid").innerHTML = list.map(cardHTML).join(""); }
+  }
+
+  /* ---------- navigation ---------- */
+  function resetFilters() {
+    Object.assign(state, { type: "any", category: "all", where: "", kind: "any", from: "", to: "", maxPrice: null, sort: "recommended", layout: "list" });
+  }
+  function scrollToContent() {
+    if (state.view === "home") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    const cats = $(".cats-row"); const y = cats.getBoundingClientRect().top + window.scrollY - 62;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+  }
+  function route(scroll = true) { state.view = hasActiveFilter() ? "results" : "home"; render(); if (scroll) scrollToContent(); }
+  function goHome() { resetFilters(); state.view = "home"; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  function goSaved() { state.layout = "list"; state.view = "saved"; render(); scrollToContent(); }
+  function goRequests() { state.view = "requests"; render(); scrollToContent(); }
+  function goHow() { resetFilters(); state.view = "home"; render(); const el = $("#how"); if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 30); }
+  function nav(t) { t === "saved" ? goSaved() : t === "requests" ? goRequests() : goHome(); }
+
+  function applySeeAll(f) { resetFilters(); if (f.category) state.category = f.category; if (f.type) state.type = f.type; state.view = "results"; render(); scrollToContent(); }
+  function applyTerm(term) {
+    resetFilters();
+    if (term === "autumn") state.from = "2026-09-01";
+    else if (term === "spring") state.from = "2027-02-01";
+    else if (term === "summer") { state.type = "sublease"; state.from = "2026-07-01"; state.to = "2026-09-30"; }
+    state.view = "results"; render(); scrollToContent();
+  }
+
+  /* ---------- carousel + fav ---------- */
+  function doCz(cz) {
+    const media = cz.closest(".card-media"); const car = $(".card-carousel", media);
+    const total = car.children.length; let idx = +media.dataset.idx;
+    idx = Math.max(0, Math.min(total - 1, idx + (cz.dataset.cz === "next" ? 1 : -1)));
+    media.dataset.idx = idx; car.style.transform = `translateX(-${idx * 100}%)`;
+    $(".cz-btn.prev", media).disabled = idx === 0;
+    $(".cz-btn.next", media).disabled = idx === total - 1;
+    [...$(".dots", media).children].forEach((d, i) => d.classList.toggle("on", i === idx));
+  }
+  function toggleFav(id) {
+    if (state.favs.has(id)) state.favs.delete(id); else state.favs.add(id);
+    saveFavs();
+    if (state.view === "saved") render();
+    else document.querySelectorAll(`[data-fav="${id}"]`).forEach((b) => b.classList.toggle("is-fav", state.favs.has(id)));
+    updateSavedCount();
+  }
+  function updateSavedCount() {
+    const n = state.favs.size, c = $("#savedCount");
+    c.textContent = n; c.hidden = n === 0;
+    $("#savedBtn").classList.toggle("has", n > 0);
+  }
+
+  /* ---------- main delegation ---------- */
+  mainEl.addEventListener("click", (e) => {
+    const fav = e.target.closest("[data-fav]"); if (fav) { e.stopPropagation(); toggleFav(+fav.dataset.fav); return; }
+    const cz = e.target.closest("[data-cz]"); if (cz) { e.stopPropagation(); doCz(cz); return; }
+    const hc = e.target.closest(".hchip"); if (hc) { applyTerm(hc.dataset.term); return; }
+    const sa = e.target.closest("[data-seeall]"); if (sa) { applySeeAll(JSON.parse(sa.dataset.seeall)); return; }
+    const go = e.target.closest("[data-go]"); if (go) { nav(go.dataset.go); return; }
+    const op = e.target.closest("[data-open]"); if (op) { openModal(+op.dataset.open); return; }
+    const card = e.target.closest(".card"); if (card) openModal(+card.dataset.id);
   });
 
   /* ---------- detail modal ---------- */
@@ -273,18 +428,25 @@
     kitchen: "Equipped kitchen", desk: "Dedicated desk", bath: "Private bathroom", balcony: "Balcony",
     lake: "Lake view", bike: "Bike storage", heat: "Heating incl.", parking: "Parking", elevator: "Lift",
   };
+  const FLATMATES = [
+    ["A", "Anaïs", "2nd year · BOSC"], ["M", "Marc", "3rd year · MIH"], ["S", "Sara", "1st year · BOSC"],
+    ["L", "Luca", "Exchange · hospitality"], ["E", "Emma", "Master · F&B"], ["J", "Jonas", "2nd year · BOSC"],
+  ];
+  function flatmatesHTML(l) {
+    const k = (l.id * 2) % FLATMATES.length, count = 2 + (l.id % 2);
+    let out = "";
+    for (let i = 0; i < count; i++) { const f = FLATMATES[(k + i) % FLATMATES.length]; out += `<div class="fm"><span class="fm-av">${f[0]}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></div>`; }
+    return out;
+  }
 
   function openModal(id) {
-    const l = LISTINGS.find((x) => x.id === id);
-    if (!l) return;
+    const l = LISTINGS.find((x) => x.id === id); if (!l) return;
     const fav = state.favs.has(id);
     const deposit = l.price * 2;
-    const fee = 0; // HelpMeFind takes no booking fee — nice selling point
     const gallery = Array.from({ length: 5 }, (_, i) => `<div class="g">${photo(l.id, i + 1, 800, 700)}</div>`).join("");
     const amens = l.amenities.map((a) => `<div class="amen">${icon(a)}<span>${AMEN_LABEL[a] || a}</span></div>`).join("");
-    const term = l.to
-      ? `Available ${fmtDate(l.from)} – ${fmtDate(l.to)}`
-      : `Available from ${fmtDate(l.from)}`;
+    const term = l.to ? `Available ${fmtDate(l.from)} – ${fmtDate(l.to)}` : `Available from ${fmtDate(l.from)}`;
+    const rating = l.reviews ? `<span class="star">${star} ${l.rating.toFixed(2)}</span><span class="sep">·</span><a href="#">${l.reviews} reviews</a>` : `<span class="star">✦ New listing</span>`;
 
     modalRoot.innerHTML = `
     <div class="modal" role="dialog" aria-modal="true" aria-label="${l.area} listing">
@@ -297,56 +459,32 @@
       </div>
       <div class="modal-body">
         <h1 class="modal-h1">${l.area}, ${l.city}</h1>
-        <div class="modal-meta">
-          <span class="star">${l.reviews ? star + " " + l.rating.toFixed(2) : "✦ New"}</span>
-          <span class="sep">·</span>
-          <a href="#">${l.reviews ? l.reviews + " reviews" : "No reviews yet"}</a>
-          <span class="sep">·</span>
-          <span>${l.minutes} min to EHL</span>
-          <span class="sep">·</span>
-          <span>${TYPE_LABEL[l.type]} · ${l.rooms}</span>
-        </div>
-
+        <div class="modal-meta">${rating}<span class="sep">·</span><span>${l.minutes} min to EHL</span><span class="sep">·</span><span>${TYPE_LABEL[l.type]} · ${l.rooms}</span></div>
         <div class="gallery">${gallery}</div>
-
         <div class="modal-grid">
           <div class="mc-left">
             <h3>${KIND_LABEL[l.kind]} hosted by ${l.host.name}</h3>
             <p class="card-sub">${l.guests} guest${l.guests > 1 ? "s" : ""} · ${l.beds} bed · ${l.baths} bath · ${l.rooms}</p>
-
             <div class="mc-host">
               <span class="h-av">${l.host.initials}</span>
-              <div>
-                <div class="h-name">Hosted by ${l.host.name}</div>
-                <div class="h-sub">${l.host.student ? "EHL student · " : "Professional host · "}on HelpMeFind since ${l.host.since}</div>
-              </div>
+              <div><div class="h-name">Hosted by ${l.host.name}</div><div class="h-sub">${l.host.student ? "EHL student · " : "Professional host · "}on HelpMeFind since ${l.host.since}</div></div>
               ${l.host.student ? `<span class="verified" style="margin-left:auto">${icon("check")} EHL verified</span>` : ""}
             </div>
-
             <div class="feat">
               <div class="f">${icon("campus")}<div><b>Close to campus</b><p>${l.transit}</p></div></div>
               <div class="f">${icon("short")}<div><b>${l.to ? "Fixed term" : "Long term"}</b><p>${term}</p></div></div>
               <div class="f">${icon(l.type === "flatshare" ? "shared" : "studio")}<div><b>${TYPE_LABEL[l.type]}</b><p>${l.type === "flatshare" ? "Shared flat" : l.type === "sublease" ? "Temporary sublet" : "Direct rental"}</p></div></div>
             </div>
-
             <div class="mc-desc">${l.desc}</div>
-
+            ${l.type === "flatshare" ? `<div class="flatmates"><h3 class="amen-title">Your future flatmates</h3><div class="fm-list">${flatmatesHTML(l)}</div></div>` : ""}
             <h3 class="amen-title">What this place offers</h3>
             <div class="amens">${amens}</div>
-
             <div class="mc-map">
               <h3 class="amen-title">Where you'll be</h3>
-              <div class="map">
-                <div class="road" style="top:42%;left:0;right:0;height:10px"></div>
-                <div class="road" style="left:58%;top:0;bottom:0;width:10px"></div>
-                <div class="road" style="top:70%;left:0;right:0;height:6px"></div>
-                <div class="campus">EHL</div>
-                <div class="pin">${svg('<path d="M12 2C7.6 2 4 5.6 4 10c0 5.4 6.6 11.4 7.3 12.1.4.4 1 .4 1.4 0C13.4 21.4 20 15.4 20 10c0-4.4-3.6-8-8-8Z" fill="currentColor" stroke="#fff"/><circle cx="12" cy="10" r="2.6" fill="#fff" stroke="none"/>', {})}</div>
-              </div>
-              <p class="card-sub" style="margin-top:10px">${l.area}, ${l.city} · exact address shared after you connect with the host.</p>
+              <div id="detailMap" class="detail-map"></div>
+              <p class="card-sub" style="margin-top:10px">${l.area}, ${l.city} · ${l.minutes} min to EHL (${l.transit}). Exact address shared once you connect with the host.</p>
             </div>
           </div>
-
           <aside class="book">
             <div class="book-price">${fmt(l.price)} <span>/ month</span></div>
             <div class="book-rate">${l.reviews ? star + " " + l.rating.toFixed(2) + " · " + l.reviews + " reviews" : "✦ New listing"}</div>
@@ -355,14 +493,14 @@
                 <div class="bf"><label>Move in</label><input type="date" value="${l.from}" data-bf="from"></div>
                 <div class="bf"><label>Move out</label><input type="date" value="${l.to || ""}" data-bf="to"></div>
               </div>
-              <div class="bf-row"><div class="bf" style="flex:1 1 100%"><label>Looking as</label><select data-bf="who"><option>Tenant</option><option>Couple</option><option>Student</option></select></div></div>
+              <div class="bf-row"><div class="bf" style="flex:1 1 100%"><label>Looking as</label><select data-bf="who"><option>A tenant</option><option>A couple</option><option>An EHL student</option></select></div></div>
             </div>
             <button class="book-btn" data-request="${l.id}">Request to view</button>
-            <p class="book-hint">No booking fees · You won't be charged yet</p>
+            <p class="book-hint">No booking fees · You won't be charged — you arrange the visit directly</p>
             <div class="book-break">
               <div class="br"><span>First month's rent</span><span>${fmt(l.price)}</span></div>
-              <div class="br"><span>Deposit (2 months)</span><span>${fmt(deposit)}</span></div>
-              <div class="br"><span>HelpMeFind fee</span><span>${fmt(fee)}</span></div>
+              <div class="br"><span>Deposit (≈ 2 months)</span><span>${fmt(deposit)}</span></div>
+              <div class="br"><span>HelpMeFind fee</span><span>CHF 0</span></div>
               <div class="total"><span>Due at move-in</span><span>${fmt(l.price + deposit)}</span></div>
             </div>
           </aside>
@@ -370,129 +508,118 @@
       </div>
     </div>`;
     openOverlay();
+    initDetailMap(l);
   }
 
-  /* ---------- overlay helpers ---------- */
-  function openOverlay() {
-    modalRoot.hidden = false;
-    document.body.style.overflow = "hidden";
-    modalRoot.scrollTop = 0;
-  }
+  /* ---------- overlay ---------- */
+  function openOverlay() { modalRoot.hidden = false; document.body.style.overflow = "hidden"; modalRoot.scrollTop = 0; }
   function closeOverlay() {
-    modalRoot.hidden = true;
-    modalRoot.innerHTML = "";
-    document.body.style.overflow = "";
+    if (detailMap) { detailMap.remove(); detailMap = null; }
+    modalRoot.hidden = true; modalRoot.innerHTML = ""; document.body.style.overflow = "";
   }
   modalRoot.addEventListener("click", (e) => {
     if (e.target === modalRoot || e.target.closest("[data-close]")) return closeOverlay();
     if (e.target.closest("[data-share]")) return toast("Listing link copied to clipboard (demo)");
     const f2 = e.target.closest("[data-fav2]");
-    if (f2) {
-      const id = +f2.dataset.fav2;
-      if (state.favs.has(id)) state.favs.delete(id); else state.favs.add(id);
-      localStorage.setItem(FAV_KEY, JSON.stringify([...state.favs]));
-      openModal(id); // re-render save state
-      render();
-      return;
-    }
-    const req = e.target.closest("[data-request]");
-    if (req) {
-      const l = LISTINGS.find((x) => x.id === +req.dataset.request);
-      toast(`Request sent to ${l.host.name}! They'll reply by email (demo).`);
-      closeOverlay();
-    }
-    const sub = e.target.closest("[data-submit]");
-    if (sub) handleSheetSubmit(sub.dataset.submit, e);
+    if (f2) { toggleFav(+f2.dataset.fav2); openModal(+f2.dataset.fav2); return; }
+    const req = e.target.closest("[data-request]"); if (req) return submitRequest(+req.dataset.request);
+    const go = e.target.closest("[data-go]"); if (go) { closeOverlay(); nav(go.dataset.go); return; }
+    const sub = e.target.closest("[data-submit]"); if (sub) handleSheetSubmit(sub.dataset.submit, e);
   });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modalRoot.hidden) closeOverlay();
-  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modalRoot.hidden) closeOverlay(); });
 
   function fmtDate(s) {
-    if (!s) return "";
+    if (!s) return "—";
     const [y, m, d] = s.split("-");
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     return `${+d} ${months[+m - 1]} ${y}`;
   }
 
-  /* ---------- search / type / sort wiring ---------- */
+  /* ---------- viewing-request flow ---------- */
+  function submitRequest(id) {
+    const l = LISTINGS.find((x) => x.id === id); if (!l) return;
+    const fromEl = document.querySelector('[data-bf="from"]');
+    const from = fromEl && fromEl.value ? fromEl.value : l.from;
+    if (!state.requests.some((r) => r.id === id)) state.requests.unshift({ id, from });
+    saveReqs(); updateSavedCount();
+    sheet(`<div class="confirm">
+      <div class="confirm-ic">${icon("check")}</div>
+      <h1 class="modal-h1">Viewing requested 🎉</h1>
+      <p class="lede">We've shared your interest in <b>${l.area}</b> with <b>${l.host.name}</b>. ${l.host.student ? "They" : "The host"} usually reply within a day. There are no fees — you arrange the visit and lease directly.</p>
+      <button class="primary-btn" data-go="requests">See my viewing requests</button>
+      <button class="ghost-btn" data-close>Keep browsing</button>
+    </div>`);
+  }
+
+  /* ---------- search / type / sort ---------- */
   $("#searchForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    state.where = $("#qWhere").value;
-    state.from = $("#qFrom").value;
-    state.to = $("#qTo").value;
-    state.kind = $("#qWho").value;
-    render();
-    window.scrollTo({ top: $(".cats-row").offsetTop - 70, behavior: "smooth" });
+    state.where = $("#qWhere").value; state.from = $("#qFrom").value; state.to = $("#qTo").value; state.kind = $("#qWho").value;
+    route();
   });
-
-  $("#typeToggle").addEventListener("click", (e) => {
-    const b = e.target.closest(".type-pill");
-    if (!b) return;
-    [...e.currentTarget.children].forEach((p) => p.classList.toggle("is-active", p === b));
-    state.type = b.dataset.type;
-    render();
-  });
-
+  $("#typeToggle").addEventListener("click", (e) => { const b = e.target.closest(".type-pill"); if (!b) return; state.type = b.dataset.type; route(); });
   $("#sortSel").addEventListener("change", (e) => { state.sort = e.target.value; render(); });
+  $("#viewToggle").addEventListener("click", (e) => { const b = e.target.closest("[data-vt]"); if (!b) return; state.layout = b.dataset.vt; render(); });
+  $("#clearAll").addEventListener("click", goHome);
+  $("#backHome").addEventListener("click", goHome);
 
-  $("#clearAll").addEventListener("click", () => {
-    Object.assign(state, { type: "any", category: "all", where: "", kind: "any", from: "", to: "", maxPrice: null });
-    $("#qWhere").value = ""; $("#qFrom").value = ""; $("#qTo").value = ""; $("#qWho").value = "any"; $("#sortSel").value = "recommended";
-    state.sort = "recommended";
-    [...$("#typeToggle").children].forEach((p, i) => p.classList.toggle("is-active", i === 0));
-    renderCats();
-    render();
-  });
-
-  /* ---------- category scroll buttons ---------- */
+  /* ---------- category scroll ---------- */
   const updateCatArrows = () => {
     $("#catLeft").hidden = catsEl.scrollLeft < 10;
     $("#catRight").hidden = catsEl.scrollLeft > catsEl.scrollWidth - catsEl.clientWidth - 10;
   };
-  $("#catLeft").addEventListener("click", () => { catsEl.scrollBy({ left: -240, behavior: "smooth" }); });
-  $("#catRight").addEventListener("click", () => { catsEl.scrollBy({ left: 240, behavior: "smooth" }); });
+  $("#catLeft").addEventListener("click", () => catsEl.scrollBy({ left: -260, behavior: "smooth" }));
+  $("#catRight").addEventListener("click", () => catsEl.scrollBy({ left: 260, behavior: "smooth" }));
   catsEl.addEventListener("scroll", updateCatArrows);
 
-  /* ---------- header scroll state + mini search ---------- */
+  /* ---------- header ---------- */
   const hdr = $("#hdr");
   window.addEventListener("scroll", () => hdr.classList.toggle("scrolled", window.scrollY > 24), { passive: true });
   $("#miniSearch").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  $(".logo").addEventListener("click", (e) => { e.preventDefault(); goHome(); });
+  $("#savedBtn").addEventListener("click", goSaved);
+  $("#globeBtn").addEventListener("click", () => toast("Language: English · Currency: CHF (demo)"));
 
   /* ---------- profile menu ---------- */
   const menu = $("#profileMenu");
   $("#profileBtn").addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
   document.addEventListener("click", () => (menu.hidden = true));
-  menu.addEventListener("click", (e) => {
-    const it = e.target.closest("[data-action]");
-    if (!it) return;
-    handleAction(it.dataset.action);
-  });
-  $("#globeBtn").addEventListener("click", () => toast("Language: English · Currency: CHF (demo)"));
-  document.body.addEventListener("click", (e) => {
-    const a = e.target.closest("[data-action]");
-    if (a && !a.closest("#profileMenu")) { e.preventDefault(); handleAction(a.dataset.action); }
-  });
+  menu.addEventListener("click", (e) => { const it = e.target.closest("[data-action]"); if (it) handleAction(it.dataset.action); });
   $("#hostLink").addEventListener("click", (e) => { e.preventDefault(); handleAction("host"); });
+  document.querySelector(".footer").addEventListener("click", (e) => { const a = e.target.closest("[data-action]"); if (a) { e.preventDefault(); handleAction(a.dataset.action); } });
 
   function handleAction(a) {
     menu.hidden = true;
-    if (a === "host") return openHostSheet();
-    if (a === "login" || a === "signup") return openAuthSheet(a);
-    if (a === "favs") {
-      const n = state.favs.size;
-      toast(n ? `You have ${n} saved stay${n > 1 ? "s" : ""} ❤` : "Tap the heart on a listing to save it");
-      return;
+    switch (a) {
+      case "host": return openHostSheet();
+      case "login": case "signup": return openAuthSheet(a);
+      case "saved": return goSaved();
+      case "requests": return goRequests();
+      case "how": return goHow();
+      case "about": return openAboutSheet();
+      case "help": return toast("Help Centre — this is a design demo 🙂");
+      case "safety": return toast("Safety & trust info coming soon (demo)");
+      case "report": return toast("Thanks — listing reports will be available soon (demo)");
+      case "family": return toast("HelpMeFind is part of the HelpMe family ✨ (demo)");
+      default: return toast("🚧 Coming soon — this is a design demo");
     }
-    if (a === "help") return toast("Help Centre coming soon (demo)");
   }
 
-  /* ---------- sheets (host / auth) ---------- */
+  /* ---------- sheets ---------- */
   function sheet(html) {
     modalRoot.innerHTML = `<div class="modal sheet"><div class="modal-top"><button class="modal-x" data-close>${svg('<path d="M6 6l12 12M18 6 6 18"/>', { sw: 2 })}</button><h2></h2><span style="width:34px"></span></div><div class="modal-body">${html}</div></div>`;
     openOverlay();
   }
-
+  function openAboutSheet() {
+    sheet(`<h1 class="modal-h1">About HelpMeFind</h1>
+      <p class="lede">HelpMeFind is a student-run housing marketplace for the EHL community in Lausanne. We connect students looking for a place with students and landlords who have one — to rent, sublease for a semester abroad, or share.</p>
+      <div class="about-points">
+        <div class="ap">${icon("campus")}<div><b>Campus-first</b><p>Every listing shows how far it really is from EHL and how to get there.</p></div></div>
+        <div class="ap">${icon("budget")}<div><b>Zero booking fees</b><p>We never take a cut. You deal directly with the student or landlord.</p></div></div>
+        <div class="ap">${icon("check")}<div><b>EHL-verified</b><p>Student hosts are verified so you know who you're talking to.</p></div></div>
+      </div>
+      <button class="primary-btn" data-go="home">Start searching</button>`);
+  }
   function openHostSheet() {
     sheet(`
       <h1 class="modal-h1">List your place</h1>
@@ -516,7 +643,6 @@
         <button class="primary-btn" data-submit="host" type="button">Publish listing</button>
       </form>`);
   }
-
   function openAuthSheet(mode) {
     const isSignup = mode === "signup";
     sheet(`
@@ -531,49 +657,6 @@
         <button class="primary-btn" data-submit="${mode}" type="button">${isSignup ? "Create account" : "Log in"}</button>
       </form>`);
   }
-
-  function handleSheetSubmit(kind, e) {
-    if (kind === "host") {
-      const f = $("#hostForm");
-      if (!f.reportValidity()) return;
-      const d = Object.fromEntries(new FormData(f));
-      const id = Math.max(...LISTINGS.map((l) => l.id)) + 1;
-      LISTINGS.unshift({
-        id,
-        _new: true,
-        area: d.area, city: d.city || "Lausanne",
-        type: d.type, kind: d.kind,
-        rooms: d.kind === "room" ? "Room in shared flat" : d.kind === "studio" ? "1.5 rooms" : "2.5 rooms",
-        price: +d.price, beds: 1, baths: 1, guests: d.kind === "apartment" ? 3 : 1,
-        rating: 5.0, reviews: 0, minutes: +d.minutes || 15,
-        transit: "Near campus", fav: false, from: d.from || "2026-09-01", to: null,
-        host: { name: d.host, initials: d.host.slice(0, 1).toUpperCase(), student: true, since: 2026 },
-        cats: ["new", d.kind === "studio" ? "studio" : d.kind === "apartment" ? "whole" : "shared", (+d.price < 900 ? "budget" : "furnished")],
-        amenities: ["wifi", "furnished", "wash", "kitchen", "desk"],
-        desc: d.desc || "A great student-friendly place near EHL.",
-      });
-      closeOverlay();
-      Object.assign(state, { type: "any", category: "all", sort: "recommended" });
-      [...$("#typeToggle").children].forEach((p, i) => p.classList.toggle("is-active", i === 0));
-      $("#sortSel").value = "recommended";
-      renderCats();
-      render();
-      window.scrollTo({ top: $(".cats-row").offsetTop - 70, behavior: "smooth" });
-      toast("🎉 Your listing is live — it's at the top of the page!");
-      return;
-    }
-    if (kind === "login" || kind === "signup") {
-      const f = $("#authForm");
-      if (!f.reportValidity()) return;
-      closeOverlay();
-      toast(kind === "signup" ? "Welcome to HelpMeFind! 🎓 (demo)" : "Logged in (demo)");
-    }
-  }
-
-  /* ---------- newsletter ---------- */
-  $("#newsForm").addEventListener("submit", (e) => { e.preventDefault(); e.target.reset(); toast("You're on the list — new rooms incoming ✉️"); });
-  $("#filtersBtn").addEventListener("click", openFiltersSheet);
-
   function openFiltersSheet() {
     sheet(`
       <h1 class="modal-h1">Filters</h1>
@@ -594,25 +677,49 @@
         <button class="primary-btn" data-submit="filters" type="button">Show stays</button>
       </form>`);
   }
+  $("#filtersBtn").addEventListener("click", openFiltersSheet);
 
-  // hook filters submit into the same delegated handler
-  const _origSheetSubmit = handleSheetSubmit;
-  handleSheetSubmit = function (kind, e) {
+  function handleSheetSubmit(kind) {
     if (kind === "filters") {
-      const f = $("#filtForm");
+      const d = Object.fromEntries(new FormData($("#filtForm")));
+      state.maxPrice = +d.price >= 2000 ? null : +d.price; state.kind = d.kind;
+      closeOverlay(); route(); return;
+    }
+    if (kind === "host") {
+      const f = $("#hostForm"); if (!f.reportValidity()) return;
       const d = Object.fromEntries(new FormData(f));
-      state.maxPrice = +d.price >= 2000 ? null : +d.price;
-      state.kind = d.kind;
-      $("#qWho").value = d.kind;
+      const id = Math.max(...LISTINGS.map((l) => l.id)) + 1;
+      const nl = {
+        id, _new: true, area: d.area, city: d.city || "Lausanne", type: d.type, kind: d.kind,
+        rooms: d.kind === "room" ? "Room in shared flat" : d.kind === "studio" ? "1.5 rooms" : "2.5 rooms",
+        price: +d.price, beds: 1, baths: 1, guests: d.kind === "apartment" ? 3 : 1,
+        rating: 5.0, reviews: 0, minutes: +d.minutes || 15, transit: "Near campus", fav: false,
+        from: d.from || "2026-09-01", to: null,
+        host: { name: d.host, initials: d.host.slice(0, 1).toUpperCase(), student: true, since: 2026 },
+        cats: ["new", d.kind === "studio" ? "studio" : d.kind === "apartment" ? "whole" : "shared", (+d.price < 900 ? "budget" : "furnished")],
+        amenities: ["wifi", "furnished", "wash", "kitchen", "desk"],
+        desc: d.desc || "A great student-friendly place near EHL.",
+      };
+      setCoords(nl); LISTINGS.unshift(nl);
       closeOverlay();
-      render();
+      resetFilters(); state.view = "results"; render(); scrollToContent();
+      toast("🎉 Your listing is live — it's at the top of the results!");
       return;
     }
-    return _origSheetSubmit(kind, e);
-  };
+    if (kind === "login" || kind === "signup") {
+      if (!$("#authForm").reportValidity()) return;
+      closeOverlay();
+      toast(kind === "signup" ? "Welcome to HelpMeFind! 🎓 (demo)" : "Logged in (demo)");
+    }
+  }
+
+  /* ---------- newsletter ---------- */
+  $("#newsForm").addEventListener("submit", (e) => { e.preventDefault(); e.target.reset(); toast("You're on the list — new rooms incoming ✉️"); });
+
+  /* ---------- expose for map popups ---------- */
+  window.HMF = { open: openModal };
 
   /* ---------- init ---------- */
-  renderCats();
   render();
   updateCatArrows();
 })();
