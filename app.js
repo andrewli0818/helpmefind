@@ -328,6 +328,7 @@
     document.querySelectorAll("#typeToggle .type-pill").forEach((p) => p.classList.toggle("is-active", p.dataset.type === state.type));
     $("#sortSel").value = state.sort; $("#qWho").value = state.kind;
     $("#qWhere").value = state.where; $("#qFrom").value = state.from; $("#qTo").value = state.to;
+    showWhen();
   }
   function updateResultCount(list) {
     if (state.view === "saved") {
@@ -515,7 +516,7 @@
     return rows.map((r) => `<div class="gtk-item"><b>${r[0]}</b><p>${r[1]}</p></div>`).join("");
   }
 
-  function openModal(id) {
+  function openModal(id, fromPop) {
     const l = LISTINGS.find((x) => x.id === id); if (!l) return;
     const fav = state.favs.has(id);
     const deposit = l.price * 2;
@@ -589,14 +590,31 @@
     </div>`;
     openOverlay();
     initDetailMap(l);
+    openStayId = id;
+    document.title = `${l.area}, ${l.city} · HelpMeFind`;
+    if (!fromPop) { history.pushState({ stay: id }, "", `${location.pathname}?stay=${id}`); pushedStay = true; }
   }
 
-  /* ---------- overlay ---------- */
+  /* ---------- overlay + shareable listing URLs ---------- */
+  const SITE_TITLE = "HelpMeFind — Student stays near EHL";
+  const getStayParam = () => new URLSearchParams(location.search).get("stay");
+  let openStayId = null, pushedStay = false;
   function openOverlay() { modalRoot.hidden = false; document.body.style.overflow = "hidden"; modalRoot.scrollTop = 0; }
-  function closeOverlay() {
+  function closeOverlay(fromPop) {
     if (detailMap) { detailMap.remove(); detailMap = null; }
     modalRoot.hidden = true; modalRoot.innerHTML = ""; document.body.style.overflow = "";
+    document.title = SITE_TITLE;
+    const wasStay = openStayId; openStayId = null;
+    if (!fromPop && wasStay != null) {
+      if (pushedStay) { pushedStay = false; history.back(); }
+      else if (getStayParam()) history.replaceState({}, "", location.pathname);
+    }
   }
+  window.addEventListener("popstate", () => {
+    const id = getStayParam();
+    if (id) { if (+id !== openStayId) openModal(+id, true); }
+    else if (openStayId != null) closeOverlay(true);
+  });
   modalRoot.addEventListener("click", (e) => {
     if (e.target === modalRoot || e.target.closest("[data-close]")) return closeOverlay();
     if (e.target.closest("[data-share]")) return toast("Listing link copied to clipboard (demo)");
@@ -631,12 +649,39 @@
     </div>`);
   }
 
-  /* ---------- search / type / sort ---------- */
-  $("#searchForm").addEventListener("submit", (e) => {
-    e.preventDefault();
+  /* ---------- search + "When" picker ---------- */
+  const whenPop = $("#whenPop"), whenBtn = $("#whenBtn");
+  const WHEN_PRESETS = {
+    autumn: { from: "2026-09-01", to: "", label: "Autumn ’26" },
+    spring: { from: "2027-02-01", to: "", label: "Spring ’27" },
+    summer: { from: "2026-07-01", to: "2026-09-30", label: "Summer sublet" },
+    any: { from: "", to: "", label: "Any time" },
+  };
+  function showWhen() {
+    const f = state.from, t = state.to;
+    const preset = Object.values(WHEN_PRESETS).find((p) => p.from === f && p.to === t && p.label !== "Any time");
+    let label = "Any time";
+    if (preset) label = preset.label;
+    else if (f && t) label = `${fmtDate(f)} – ${fmtDate(t)}`;
+    else if (f) label = `From ${fmtDate(f)}`;
+    else if (t) label = `Until ${fmtDate(t)}`;
+    whenBtn.textContent = label;
+    whenBtn.classList.toggle("set", label !== "Any time");
+  }
+  const closeWhen = () => { whenPop.hidden = true; whenBtn.classList.remove("open"); };
+  function applySearch() {
     state.where = $("#qWhere").value; state.from = $("#qFrom").value; state.to = $("#qTo").value; state.kind = $("#qWho").value;
     route();
+  }
+  whenBtn.addEventListener("click", (e) => { e.stopPropagation(); whenPop.hidden = !whenPop.hidden; whenBtn.classList.toggle("open", !whenPop.hidden); });
+  whenPop.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const p = e.target.closest("[data-when]");
+    if (p) { const w = WHEN_PRESETS[p.dataset.when]; $("#qFrom").value = w.from; $("#qTo").value = w.to; state.from = w.from; state.to = w.to; showWhen(); closeWhen(); applySearch(); return; }
+    if (e.target.closest("#whenApply")) { state.from = $("#qFrom").value; state.to = $("#qTo").value; showWhen(); closeWhen(); applySearch(); }
   });
+  document.addEventListener("click", closeWhen);
+  $("#searchForm").addEventListener("submit", (e) => { e.preventDefault(); closeWhen(); applySearch(); });
   $("#typeToggle").addEventListener("click", (e) => { const b = e.target.closest(".type-pill"); if (!b) return; state.type = b.dataset.type; route(); });
   $("#sortSel").addEventListener("change", (e) => { state.sort = e.target.value; render(); });
   $("#viewToggle").addEventListener("click", (e) => { const b = e.target.closest("[data-vt]"); if (!b) return; state.layout = b.dataset.vt; render(); });
@@ -843,4 +888,5 @@
   /* ---------- init ---------- */
   render();
   updateCatArrows();
+  { const sid = getStayParam(); if (sid && LISTINGS.some((l) => l.id === +sid)) openModal(+sid, true); }
 })();

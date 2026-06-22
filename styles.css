@@ -581,3 +581,22 @@ input[type=range]{accent-color:var(--brand);width:100%}
   .gtk{grid-template-columns:1fr 1fr}
   .rev-bars,.rev-list{grid-template-columns:1fr}
 }
+
+/* ===================== v4: WHEN PICKER ===================== */
+.seg-when{position:relative}
+.when-val{display:block;width:100%;text-align:left;font-size:14px;color:var(--gray);background:transparent;padding:0;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.when-val.set{color:var(--ink-2);font-weight:600}
+.when-pop{position:absolute;top:calc(100% + 14px);left:0;z-index:60;width:330px;max-width:86vw;background:#fff;border:1px solid var(--line-2);border-radius:18px;box-shadow:var(--shadow-lg);padding:16px;cursor:default}
+.when-presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.when-presets button{text-align:left;border:1px solid var(--line-2);border-radius:12px;padding:10px 12px;transition:.12s;display:flex;flex-direction:column;gap:2px;background:#fff}
+.when-presets button:hover{border-color:var(--brand);background:var(--brand-soft);transform:translateY(-1px)}
+.when-presets b{font-size:13px;font-weight:700;color:var(--ink)}
+.when-presets small{font-size:11px;color:var(--gray)}
+.when-or{display:flex;align-items:center;gap:12px;color:var(--gray);font-size:12px;margin:14px 0}
+.when-or::before,.when-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.when-dates{display:flex;gap:10px}
+.when-dates label{flex:1;display:flex;flex-direction:column;gap:5px;font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.3px}
+.when-dates input{border:1px solid var(--line-2);border-radius:10px;padding:9px 10px;font-size:13px;font-weight:500}
+.when-dates input:focus{outline:none;border-color:var(--brand)}
+.when-pop .primary-btn{margin-top:14px;padding:11px}
+@media(max-width:860px){.when-pop{left:auto;right:0}}

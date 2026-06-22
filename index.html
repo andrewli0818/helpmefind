@@ -82,13 +82,23 @@
             <label for="qWhere">Location</label>
             <input id="qWhere" type="text" placeholder="Lausanne, Épalinges, near campus…" />
           </div>
-          <div class="seg">
-            <label for="qFrom">Move in</label>
-            <input id="qFrom" type="date" />
-          </div>
-          <div class="seg">
-            <label for="qTo">Move out</label>
-            <input id="qTo" type="date" />
+          <div class="seg seg-when" id="whenSeg">
+            <label>When</label>
+            <button type="button" class="when-val" id="whenBtn">Any time</button>
+            <div class="when-pop" id="whenPop" hidden>
+              <div class="when-presets">
+                <button type="button" data-when="autumn"><b>🍂 Autumn ’26</b><small>From Sep 2026</small></button>
+                <button type="button" data-when="spring"><b>🌱 Spring ’27</b><small>From Feb 2027</small></button>
+                <button type="button" data-when="summer"><b>☀️ Summer sublet</b><small>Jul – Sep 2026</small></button>
+                <button type="button" data-when="any"><b>🗓️ I'm flexible</b><small>Any time</small></button>
+              </div>
+              <div class="when-or"><span>or pick exact dates</span></div>
+              <div class="when-dates">
+                <label>Move in<input id="qFrom" type="date" /></label>
+                <label>Move out<input id="qTo" type="date" /></label>
+              </div>
+              <button type="button" class="primary-btn" id="whenApply">Apply dates</button>
+            </div>
           </div>
           <div class="seg seg-who">
             <label for="qWho">Place type</label>
