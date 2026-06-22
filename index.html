@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HelpMeFind — Student stays near EHL</title>
+  <meta name="description" content="Find rooms, studios and subleases for EHL students. Rent, sublease or share — near campus, furnished, lake views and more." />
+  <link rel="preconnect" href="https://picsum.photos" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===================== HEADER ===================== -->
+  <header class="hdr" id="hdr">
+    <div class="hdr-inner">
+      <a href="#" class="logo" aria-label="HelpMeFind home">
+        <svg class="logo-mark" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+          <path d="M16 2c-5 0-9 3.9-9 9 0 6.2 7.6 16.2 8.3 17.1.4.5 1 .5 1.4 0C17.4 27.2 25 17.2 25 11c0-5.1-4-9-9-9z" fill="currentColor"/>
+          <path d="M16 7.2 10.8 11v6.2c0 .4.3.7.7.7h2.3v-3.5h4.4v3.5h2.3c.4 0 .7-.3.7-.7V11L16 7.2z" fill="#fff"/>
+        </svg>
+        <span class="logo-text">HelpMeFind</span>
+      </a>
+
+      <div class="hdr-center">
+        <button class="mini-search" id="miniSearch" type="button">
+          <span>Anywhere near EHL</span>
+          <span class="dot">·</span>
+          <span>Any dates</span>
+          <span class="dot">·</span>
+          <span class="muted">Add guests</span>
+          <span class="mini-search-btn" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="hdr-right">
+        <a href="#" class="host-link" id="hostLink">List your place</a>
+        <button class="icon-btn" aria-label="Choose language" id="globeBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 0c2.5 2.5 3.5 6 3.5 10S14.5 19.5 12 22M12 2C9.5 4.5 8.5 8 8.5 12s1 7.5 3.5 10M2.5 9h19M2.5 15h19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button class="profile-btn" id="profileBtn" aria-label="Main menu" aria-haspopup="true">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span class="avatar">
+            <svg viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="9" r="4" fill="#fff"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" fill="#fff"/></svg>
+          </span>
+        </button>
+        <div class="menu" id="profileMenu" role="menu" hidden>
+          <button class="menu-item bold" data-action="signup">Sign up</button>
+          <button class="menu-item" data-action="login">Log in</button>
+          <div class="menu-sep"></div>
+          <button class="menu-item" data-action="host">List your place</button>
+          <button class="menu-item" data-action="favs">Saved stays</button>
+          <button class="menu-item" data-action="help">Help Centre</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Big search bar -->
+    <div class="search-zone" id="searchZone">
+      <form class="search" id="searchForm" autocomplete="off">
+        <div class="seg seg-where">
+          <label for="qWhere">Where</label>
+          <input id="qWhere" type="text" placeholder="Search Lausanne, Épalinges, campus…" />
+        </div>
+        <div class="seg-div"></div>
+        <div class="seg">
+          <label for="qFrom">Move in</label>
+          <input id="qFrom" type="date" />
+        </div>
+        <div class="seg-div"></div>
+        <div class="seg">
+          <label for="qTo">Move out</label>
+          <input id="qTo" type="date" />
+        </div>
+        <div class="seg-div"></div>
+        <div class="seg seg-who">
+          <label for="qWho">Looking for</label>
+          <select id="qWho">
+            <option value="any">Any place</option>
+            <option value="room">A room</option>
+            <option value="studio">A studio</option>
+            <option value="apartment">Whole apartment</option>
+          </select>
+        </div>
+        <button class="search-submit" type="submit" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+          <span>Search</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Rent / Sublease / Flatshare toggle -->
+    <div class="type-toggle" id="typeToggle" role="tablist">
+      <button class="type-pill is-active" data-type="any" role="tab">All stays</button>
+      <button class="type-pill" data-type="rent" role="tab">Rent</button>
+      <button class="type-pill" data-type="sublease" role="tab">Sublease</button>
+      <button class="type-pill" data-type="flatshare" role="tab">Flatshare</button>
+    </div>
+  </header>
+
+  <!-- ===================== CATEGORY BAR ===================== -->
+  <div class="cats-row">
+    <button class="cats-scroll left" id="catLeft" aria-label="Scroll left" hidden>
+      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <nav class="cats" id="cats" aria-label="Filter by category"></nav>
+    <button class="cats-scroll right" id="catRight" aria-label="Scroll right">
+      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="filters-btn" id="filtersBtn">
+      <svg viewBox="0 0 24 24" width="15" height="15"><path d="M3 6h18M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Filters
+    </button>
+  </div>
+
+  <!-- ===================== RESULTS ===================== -->
+  <main class="wrap">
+    <div class="results-bar">
+      <p id="resultCount" class="result-count"></p>
+      <label class="sort">
+        <span>Sort:</span>
+        <select id="sortSel">
+          <option value="recommended">Recommended</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="closest">Closest to campus</option>
+          <option value="rating">Top rated</option>
+        </select>
+      </label>
+    </div>
+
+    <section class="grid" id="grid" aria-live="polite"></section>
+
+    <div class="empty" id="empty" hidden>
+      <h3>No stays match your search</h3>
+      <p>Try clearing filters or widening your dates.</p>
+      <button class="btn-outline" id="clearAll">Clear all filters</button>
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer">
+    <div class="footer-cols">
+      <div>
+        <h4>Support</h4>
+        <a href="#">Help Centre</a>
+        <a href="#">Safety information</a>
+        <a href="#">Report a listing</a>
+        <a href="#">Student verification</a>
+      </div>
+      <div>
+        <h4>Hosting</h4>
+        <a href="#" data-action="host">List your place</a>
+        <a href="#">Sublease your room</a>
+        <a href="#">Hosting resources</a>
+        <a href="#">Community forum</a>
+      </div>
+      <div>
+        <h4>HelpMeFind</h4>
+        <a href="#">About us</a>
+        <a href="#">For EHL students</a>
+        <a href="#">Careers</a>
+        <a href="#">Part of the HelpMe family</a>
+      </div>
+      <div>
+        <h4>Stay in the loop</h4>
+        <p class="footer-note">New rooms near campus, in your inbox.</p>
+        <form class="newsletter" id="newsForm">
+          <input type="email" placeholder="you@ehl.ch" required />
+          <button type="submit">Join</button>
+        </form>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <span>© 2026 HelpMeFind · A student project · Not affiliated with Airbnb</span>
+      <span class="footer-links">
+        <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Sitemap</a>
+      </span>
+    </div>
+  </footer>
+
+  <!-- ===================== OVERLAYS ===================== -->
+  <div class="modal-root" id="modalRoot" hidden></div>
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
