@@ -36,7 +36,9 @@
     elevator: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M12 3.5v17"/><path d="M9 9l-1.3 1.6h2.6L9 9ZM15 15l1.3-1.6h-2.6L15 15Z" fill="currentColor" stroke="none"/>',
     check: '<path d="M5 12.5 10 17l9-10"/>',
     pin: '<path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10Z"/><circle cx="12" cy="11" r="2"/>',
+    grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
   };
+  const LB_N = 8;
   const icon = (name) => svg(ICONS[name] || ICONS.check);
   const star = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.1 6.6.7-5 4.5 1.4 6.5L12 17.6 6.1 20.8l1.4-6.5-5-4.5 6.6-.7z"/></svg>';
   const heartSvg = '<svg viewBox="0 0 24 24"><path class="heart" d="M12 21s-7.5-4.7-10-9.3C.8 9 2 5.5 5.2 5.5c2 0 3.2 1.1 3.8 2.2.6-1.1 1.8-2.2 3.8-2.2 3.2 0 4.4 3.5 3.2 6.2C18.5 16.3 12 21 12 21z"/></svg>';
@@ -646,7 +648,7 @@
     const l = LISTINGS.find((x) => x.id === id); if (!l) return;
     const fav = state.favs.has(id);
     const deposit = l.price * 2;
-    const gallery = Array.from({ length: 5 }, (_, i) => `<div class="g">${photo(l.id, i + 1, 800, 700)}</div>`).join("");
+    const gallery = Array.from({ length: 5 }, (_, i) => `<div class="g" data-gp="${i}">${photo(l.id, i + 1, 800, 700)}</div>`).join("");
     const amens = l.amenities.map((a) => `<div class="amen">${icon(a)}<span>${AMEN_LABEL[a] || a}</span></div>`).join("");
     const term = l.to ? `Available ${fmtDate(l.from)} – ${fmtDate(l.to)}` : `Available from ${fmtDate(l.from)}`;
     const rating = l.reviews ? `<span class="star">${star} ${l.rating.toFixed(2)}</span><span class="sep">·</span><a href="#">${l.reviews} reviews</a>` : `<span class="star">✦ New listing</span>`;
@@ -663,7 +665,7 @@
       <div class="modal-body">
         <h1 class="modal-h1">${l.area}, ${l.city}</h1>
         <div class="modal-meta">${rating}<span class="sep">·</span><span>${l.minutes} min to EHL</span><span class="sep">·</span><span>${TYPE_LABEL[l.type]} · ${l.rooms}</span></div>
-        <div class="gallery">${gallery}</div>
+        <div class="gallery">${gallery}<button class="gallery-all" data-gp="0">${icon("grid")} Show all ${LB_N} photos</button></div>
         <div class="modal-grid">
           <div class="mc-left">
             <h3>${KIND_LABEL[l.kind]} hosted by ${l.host.name}</h3>
@@ -744,18 +746,44 @@
     if (id) { if (+id !== openStayId) openModal(+id, true); }
     else if (openStayId != null) closeOverlay(true);
   });
+
+  /* ---------- photo lightbox ---------- */
+  let lbId = null, lbIdx = 0;
+  const lightbox = $("#lightbox");
+  function openLightbox(id, idx) {
+    if (id == null) return;
+    lbId = id; lbIdx = idx || 0;
+    lightbox.innerHTML = `<button class="lb-x" data-lbclose aria-label="Close">${svg('<path d="M6 6l12 12M18 6 6 18"/>', { sw: 2 })}</button>
+      <button class="lb-nav prev" data-lbnav="-1" aria-label="Previous">${svg('<path d="M15 5l-7 7 7 7"/>', { sw: 2.2 })}</button>
+      <div class="lb-stage" id="lbStage"></div>
+      <button class="lb-nav next" data-lbnav="1" aria-label="Next">${svg('<path d="M9 5l7 7-7 7"/>', { sw: 2.2 })}</button>
+      <div class="lb-count" id="lbCount"></div>`;
+    lightbox.hidden = false; document.body.style.overflow = "hidden"; document.body.classList.add("lb-open");
+    paintLb();
+  }
+  function paintLb() { $("#lbStage").innerHTML = photo(lbId, (lbIdx % LB_N) + 1, 1280, 960); $("#lbCount").textContent = `${lbIdx + 1} / ${LB_N}`; }
+  function lbNav(d) { lbIdx = (lbIdx + d + LB_N) % LB_N; paintLb(); }
+  function closeLightbox() { lightbox.hidden = true; lightbox.innerHTML = ""; document.body.classList.remove("lb-open"); if (modalRoot.hidden) document.body.style.overflow = ""; }
+  lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox || e.target.closest("[data-lbclose]")) return closeLightbox();
+    const n = e.target.closest("[data-lbnav]"); if (n) lbNav(+n.dataset.lbnav);
+  });
   modalRoot.addEventListener("click", (e) => {
     if (e.target === modalRoot || e.target.closest("[data-close]")) return closeOverlay();
     if (e.target.closest("[data-share]")) return toast("Listing link copied to clipboard (demo)");
     const f2 = e.target.closest("[data-fav2]");
     if (f2) { toggleFav(+f2.dataset.fav2); openModal(+f2.dataset.fav2); return; }
     const req = e.target.closest("[data-request]"); if (req) return submitRequest(+req.dataset.request);
+    const gp = e.target.closest("[data-gp]"); if (gp) return openLightbox(openStayId, +gp.dataset.gp);
     const op = e.target.closest("[data-open]"); if (op) return openModal(+op.dataset.open);
     const hg = e.target.closest("[data-hoodgo]"); if (hg) { const h = HOODS.find((x) => x.id === hg.dataset.hoodgo); closeOverlay(); applyHood(h); return; }
     const go = e.target.closest("[data-go]"); if (go) { closeOverlay(); nav(go.dataset.go); return; }
     const sub = e.target.closest("[data-submit]"); if (sub) handleSheetSubmit(sub.dataset.submit, e);
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modalRoot.hidden) closeOverlay(); });
+  document.addEventListener("keydown", (e) => {
+    if (!lightbox.hidden) { if (e.key === "Escape") closeLightbox(); else if (e.key === "ArrowLeft") lbNav(-1); else if (e.key === "ArrowRight") lbNav(1); return; }
+    if (e.key === "Escape" && !modalRoot.hidden) closeOverlay();
+  });
 
   function fmtDate(s) {
     if (!s) return "—";
