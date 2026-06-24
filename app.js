@@ -919,6 +919,12 @@
   $(".logo").addEventListener("click", (e) => { e.preventDefault(); goHome(); });
   $("#savedBtn").addEventListener("click", goSaved);
   $("#globeBtn").addEventListener("click", () => toast("Language: English · Currency: CHF (demo)"));
+  $("#themeBtn").addEventListener("click", () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    if (dark) document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", "dark");
+    try { localStorage.setItem("hmf_theme", dark ? "light" : "dark"); } catch (e) {}
+  });
   $("#botnav").addEventListener("click", (e) => {
     const b = e.target.closest("[data-bn]"); if (!b) return;
     const t = b.dataset.bn;
