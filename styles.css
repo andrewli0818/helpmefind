@@ -774,6 +774,9 @@ input[type=range]{accent-color:var(--brand);width:100%}
 .map-list-head{font-size:15px;font-weight:700;color:var(--ink);position:sticky;top:0;background:var(--bg);padding:0 0 6px;z-index:1}
 .map-list-empty{color:var(--gray);padding:24px 0}
 .map-list .sim-card{flex-shrink:0}
+.map-pin{transition:transform .12s,background .12s,color .12s}
+.map-pin.hi{background:var(--brand);color:var(--on-brand);transform:scale(1.18);box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.sim-card.hi{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand)}
 @media(max-width:860px){
   .map-split{grid-template-columns:1fr;height:auto}
   .map-list{display:none}

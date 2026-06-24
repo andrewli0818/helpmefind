@@ -330,7 +330,9 @@
         <button class="map-pop-btn" onclick="HMF.open(${l.id})">View details</button>
       </div></div>`;
 
-  let browseMap = null, detailMap = null;
+  let browseMap = null, detailMap = null, browseMarkers = {};
+  function highlightPin(id, on) { const m = browseMarkers[id]; if (m && m._icon) { const p = m._icon.querySelector(".map-pin"); if (p) p.classList.toggle("hi", on); m.setZIndexOffset(on ? 2000 : 0); } }
+  function highlightCard(id, on) { const c = document.querySelector(`#mapList [data-open="${id}"]`); if (c) c.classList.toggle("hi", on); }
   function renderMap(list) {
     const ml = $("#mapList");
     if (ml) ml.innerHTML = `<div class="map-list-head">${list.length} ${list.length === 1 ? "stay" : "stays"} on the map</div>` + (list.length ? list.map(simCard).join("") : '<div class="map-list-empty">No stays match — adjust your filters.</div>');
@@ -341,8 +343,9 @@
     browseMap = L.map(host, { scrollWheelZoom: false }).setView([EHL.lat, EHL.lng], 12);
     L.tileLayer(TILES, { maxZoom: 19, attribution: ATTR }).addTo(browseMap);
     L.marker([EHL.lat, EHL.lng], { icon: campusDiv(), zIndexOffset: 1000 }).addTo(browseMap).bindPopup("<b>🎓 EHL Campus</b>");
+    browseMarkers = {};
     const pts = [[EHL.lat, EHL.lng]];
-    list.forEach((l) => { if (l.lat == null) return; L.marker([l.lat, l.lng], { icon: priceDiv(l) }).addTo(browseMap).bindPopup(mapPopup(l), { maxWidth: 260, minWidth: 240 }); pts.push([l.lat, l.lng]); });
+    list.forEach((l) => { if (l.lat == null) return; const m = L.marker([l.lat, l.lng], { icon: priceDiv(l) }).addTo(browseMap).bindPopup(mapPopup(l), { maxWidth: 260, minWidth: 240 }); m.on("mouseover", () => highlightCard(l.id, true)); m.on("mouseout", () => highlightCard(l.id, false)); browseMarkers[l.id] = m; pts.push([l.lat, l.lng]); });
     if (pts.length > 1) browseMap.fitBounds(pts, { padding: [55, 55] });
     setTimeout(() => browseMap && browseMap.invalidateSize(), 90);
   }
@@ -918,6 +921,8 @@
   $("#typeToggle").addEventListener("click", (e) => { const b = e.target.closest(".type-pill"); if (!b) return; state.type = b.dataset.type; route(); });
   $("#sortSel").addEventListener("change", (e) => { state.sort = e.target.value; render(); });
   $("#viewToggle").addEventListener("click", (e) => { const b = e.target.closest("[data-vt]"); if (!b) return; state.layout = b.dataset.vt; render(); });
+  $("#mapList").addEventListener("mouseover", (e) => { const c = e.target.closest(".sim-card"); if (c) highlightPin(+c.dataset.open, true); });
+  $("#mapList").addEventListener("mouseout", (e) => { const c = e.target.closest(".sim-card"); if (c) highlightPin(+c.dataset.open, false); });
   $("#clearAll").addEventListener("click", goHome);
   $("#backHome").addEventListener("click", goHome);
   $("#saveSearch").addEventListener("click", saveCurrentSearch);
