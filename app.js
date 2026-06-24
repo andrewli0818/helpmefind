@@ -610,6 +610,26 @@
     }
     return `<div class="rev-head"><span class="rev-score">${star} ${l.rating.toFixed(2)}</span><span class="sep">·</span><span>${l.reviews} student reviews</span></div><div class="rev-bars">${bars}</div><div class="rev-list">${cards}</div>`;
   }
+  function related(l) {
+    const pool = [
+      ...LISTINGS.filter((x) => x.id !== l.id && x.area === l.area),
+      ...LISTINGS.filter((x) => x.id !== l.id && x.area !== l.area && x.type === l.type),
+      ...LISTINGS.filter((x) => x.id !== l.id),
+    ];
+    const seen = new Set(), out = [];
+    for (const x of pool) { if (out.length >= 4) break; if (!seen.has(x.id)) { seen.add(x.id); out.push(x); } }
+    return out;
+  }
+  function simCard(l) {
+    return `<button class="sim-card" data-open="${l.id}">
+      <div class="sim-img">${photo(l.id, 1, 320, 240)}</div>
+      <div class="sim-b">
+        <div class="sim-row"><b>${l.area}, ${l.city}</b><span class="sim-rate">${l.reviews ? "★ " + l.rating.toFixed(2) : "New"}</span></div>
+        <p>${TYPE_LABEL[l.type]} · ${l.minutes} min to EHL</p>
+        <p class="sim-price"><b>${fmt(l.price)}</b> / month</p>
+      </div>
+    </button>`;
+  }
   function gtkHTML(l) {
     const rows = [
       ["Lease", l.to ? "Sublet until " + fmtDate(l.to) : "From 6 months / 1 semester"],
@@ -692,7 +712,9 @@
             </div>
           </aside>
         </div>
+        <div class="similar"><h3 class="amen-title">Similar places near campus</h3><div class="sim-grid">${related(l).map(simCard).join("")}</div></div>
       </div>
+      <div class="book-sticky"><div class="bs-price"><b>${fmt(l.price)}</b> / month <span>${l.reviews ? "★ " + l.rating.toFixed(2) : "✦ New"}</span></div><button class="book-btn" data-request="${l.id}">Request to view</button></div>
     </div>`;
     openOverlay();
     initDetailMap(l);
@@ -998,6 +1020,7 @@
   window.HMF = { open: openModal };
 
   /* ---------- init ---------- */
+  { const opts = [...new Set(["Near campus", ...HOODS.map((h) => h.name), ...LISTINGS.map((l) => l.area), ...LISTINGS.map((l) => l.city)])]; $("#whereList").innerHTML = opts.map((o) => `<option value="${o}">`).join(""); }
   render();
   updateCatArrows();
   { const sid = getStayParam(); if (sid && LISTINGS.some((l) => l.id === +sid)) openModal(+sid, true); }

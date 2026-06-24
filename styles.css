@@ -668,3 +668,28 @@ input[type=range]{accent-color:var(--brand);width:100%}
 .hood-stats div{background:var(--bg-soft);border-radius:12px;padding:14px 8px;text-align:center}
 .hood-stats b{display:block;font-size:15px;font-family:var(--font-head)}
 .hood-stats span{font-size:12px;color:var(--gray)}
+
+/* ===================== v7: SIMILAR PLACES + STICKY CTA ===================== */
+.similar{margin-top:10px}
+.sim-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.sim-card{text-align:left;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;transition:.15s;padding:0;display:flex;flex-direction:column}
+.sim-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:var(--line-2)}
+.sim-img{position:relative;aspect-ratio:4/3;overflow:hidden}
+.sim-b{padding:12px 13px 14px}
+.sim-row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.sim-row b{font-size:14px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sim-rate{font-size:13px;font-weight:600;color:var(--brand-3);flex-shrink:0}
+.sim-b p{font-size:13px;color:var(--gray);margin-top:3px}
+.sim-price{color:var(--ink)!important}
+.sim-price b{font-weight:800}
+
+.book-sticky{display:none}
+@media(max-width:1020px){
+  .book-sticky{display:flex;align-items:center;justify-content:space-between;gap:14px;position:fixed;left:0;right:0;bottom:0;z-index:110;background:#fff;border-top:1px solid var(--line);padding:12px 18px calc(12px + env(safe-area-inset-bottom,0));box-shadow:0 -4px 16px rgba(0,0,0,.1)}
+  .book-sticky .bs-price{font-size:15px;color:var(--ink)}
+  .book-sticky .bs-price b{font-weight:800}
+  .book-sticky .bs-price span{display:block;font-size:12px;color:var(--gray);font-weight:600}
+  .book-sticky .book-btn{width:auto;flex-shrink:0;padding:13px 22px}
+  .modal-body{padding-bottom:88px}
+  .sim-grid{grid-template-columns:1fr 1fr}
+}
