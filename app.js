@@ -784,7 +784,7 @@
   const SITE_TITLE = "HelpMeFind — Student stays near EHL";
   const getStayParam = () => new URLSearchParams(location.search).get("stay");
   let openStayId = null, pushedStay = false;
-  function openOverlay() { modalRoot.hidden = false; document.body.style.overflow = "hidden"; document.body.classList.add("ov"); modalRoot.scrollTop = 0; }
+  function openOverlay() { modalRoot.hidden = false; document.body.style.overflow = "hidden"; document.body.classList.add("ov"); modalRoot.scrollTop = 0; setTimeout(() => { const x = modalRoot.querySelector("[data-close]"); if (x) x.focus(); }, 30); }
   function closeOverlay(fromPop) {
     if (detailMap) { detailMap.remove(); detailMap = null; }
     if (hoodMap) { hoodMap.remove(); hoodMap = null; }

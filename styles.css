@@ -752,6 +752,20 @@ input[type=range]{accent-color:var(--brand);width:100%}
 [data-theme="dark"] .deal,[data-theme="dark"] .deal-note{background:rgba(53,170,100,.16);color:#62d394}
 [data-theme="dark"] .verified{color:#62d394}
 [data-theme="dark"] .confirm-ic{background:rgba(53,170,100,.16);color:#62d394}
+
+/* ===================== v13: POLISH / A11Y ===================== */
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+.grid .card:nth-child(2),.row .card:nth-child(2){animation-delay:.03s}
+.grid .card:nth-child(3),.row .card:nth-child(3){animation-delay:.06s}
+.grid .card:nth-child(4),.row .card:nth-child(4){animation-delay:.09s}
+.grid .card:nth-child(5){animation-delay:.12s}
+.grid .card:nth-child(6){animation-delay:.15s}
+.grid .card:nth-child(7){animation-delay:.18s}
+.grid .card:nth-child(8){animation-delay:.21s}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .ph::after{display:none}
+}
 .theme-btn .moon{display:none}
 [data-theme="dark"] .theme-btn .sun{display:none}
 [data-theme="dark"] .theme-btn .moon{display:block}

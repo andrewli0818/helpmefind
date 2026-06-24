@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HelpMeFind</title>
+  <script>
+    // GitHub Pages serves this for unknown paths — bounce back into the app.
+    (function () {
+      var base = location.pathname.indexOf('/helpmefind/') === 0 ? '/helpmefind/' : '/';
+      location.replace(base + (location.search || '') + (location.hash || ''));
+    })();
+  </script>
+</head>
+<body style="font-family:system-ui,sans-serif;color:#6f7679;display:grid;place-items:center;height:100vh;margin:0">
+  <p>Taking you back to HelpMeFind…</p>
+</body>
+</html>
