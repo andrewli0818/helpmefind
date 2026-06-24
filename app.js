@@ -400,6 +400,7 @@
     const showMap = isList && state.layout === "map";
     show("#hero", v === "home");
     show("#how", v === "home");
+    show("#faq", v === "home");
     show("#homeSections", v === "home");
     show("#viewHead", v === "saved" || v === "requests");
     show("#resultsBar", isList);
