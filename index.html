@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HelpMeFind — Student stays near EHL</title>
   <meta name="description" content="Find rooms, studios and subleases for EHL students. Rent, sublease or share — near campus, furnished, lake views and more." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="HelpMeFind — Student stays near EHL" />
+  <meta property="og:description" content="Rooms, studios and flats around EHL — to rent, sublease for a semester, or share. No booking fees, built by students." />
+  <meta property="og:image" content="https://andrewli0818.github.io/helpmefind/og-image.svg" />
+  <meta property="og:url" content="https://andrewli0818.github.io/helpmefind/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HelpMeFind — Student stays near EHL" />
+  <meta name="twitter:description" content="Rooms, studios and flats around EHL — rent, sublease or share. No booking fees." />
+  <meta name="twitter:image" content="https://andrewli0818.github.io/helpmefind/og-image.svg" />
+  <meta name="theme-color" content="#F59E0B" />
   <link rel="preconnect" href="https://picsum.photos" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -203,6 +214,7 @@
 
     <!-- empty state -->
     <div class="empty" id="empty" hidden>
+      <div class="empty-ic"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
       <h3 id="emptyTitle">No stays match your search</h3>
       <p id="emptyMsg">Try clearing filters or widening your dates.</p>
       <button class="btn-outline" id="clearAll">Clear all filters</button>
@@ -264,6 +276,15 @@
   <!-- ===================== OVERLAYS ===================== -->
   <div class="modal-root" id="modalRoot" hidden></div>
   <div class="toast" id="toast" hidden></div>
+
+  <!-- compare tray -->
+  <div class="cmp-tray" id="cmpTray" hidden>
+    <div class="cmp-tray-thumbs" id="cmpThumbs"></div>
+    <div class="cmp-tray-actions">
+      <button class="cmp-tray-clear" id="cmpClear">Clear</button>
+      <button class="cmp-tray-go" id="cmpGo">Compare <span id="cmpCount">0</span></button>
+    </div>
+  </div>
 
   <!-- mobile bottom nav -->
   <nav class="botnav" id="botnav" aria-label="Primary">

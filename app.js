@@ -128,6 +128,7 @@
     sort: "recommended", maxPrice: null, maxMinutes: null, amen: new Set(),
     favs: new Set(load(FAV_KEY)),
     requests: load(REQ_KEY),
+    compare: new Set(),
   };
   const saveFavs = () => localStorage.setItem(FAV_KEY, JSON.stringify([...state.favs]));
   const saveReqs = () => localStorage.setItem(REQ_KEY, JSON.stringify(state.requests));
@@ -209,6 +210,7 @@
         ${l.fav ? '<span class="card-badge">Student favourite</span>' : ""}
         <button class="card-fav ${fav ? "is-fav" : ""}" data-fav="${l.id}" aria-label="Save">${heartSvg}</button>
         <span class="card-type">${TYPE_LABEL[l.type]}</span>
+        <button class="card-cmp ${state.compare.has(l.id) ? "on" : ""}" data-cmp="${l.id}">${state.compare.has(l.id) ? "✓ Comparing" : "⇄ Compare"}</button>
         <div class="card-carousel">${slides}</div>
         <button class="cz-btn prev" data-cz="prev" disabled aria-label="Previous photo"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
         <button class="cz-btn next" data-cz="next" aria-label="Next photo"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
@@ -451,10 +453,52 @@
     $("#savedBtn").classList.toggle("has", n > 0);
   }
 
+  /* ---------- compare ---------- */
+  const cmpTray = $("#cmpTray");
+  function toggleCompare(id) {
+    if (state.compare.has(id)) state.compare.delete(id);
+    else { if (state.compare.size >= 3) { toast("Compare up to 3 places at a time"); return; } state.compare.add(id); }
+    document.querySelectorAll(`[data-cmp="${id}"]`).forEach((b) => { const on = state.compare.has(id); b.classList.toggle("on", on); b.textContent = on ? "✓ Comparing" : "⇄ Compare"; });
+    renderTray();
+  }
+  function renderTray() {
+    const ids = [...state.compare];
+    if (!ids.length) { cmpTray.hidden = true; return; }
+    cmpTray.hidden = false;
+    $("#cmpCount").textContent = ids.length;
+    $("#cmpThumbs").innerHTML = ids.map((id) => { const l = LISTINGS.find((x) => x.id === id); return `<div class="cmp-thumb" data-cmprm="${id}"><div class="cmp-thumb-img">${photo(id, 1, 120, 100)}</div><span>${l.area}</span><i>✕</i></div>`; }).join("");
+  }
+  const CMP_ROWS = [
+    ["Rent", (l) => fmt(l.price) + " /mo", "price"],
+    ["Type", (l) => TYPE_LABEL[l.type]],
+    ["Place", (l) => KIND_LABEL[l.kind]],
+    ["To EHL", (l) => `${l.minutes} min · ${l.transit}`, "min"],
+    ["Deposit", (l) => fmt(l.price * 2)],
+    ["Rooms", (l) => l.rooms],
+    ["Rating", (l) => (l.reviews ? `★ ${l.rating.toFixed(2)} (${l.reviews})` : "New")],
+    ["Furnished", (l) => (l.amenities.includes("furnished") ? "Yes" : "—")],
+    ["Lake view", (l) => (l.amenities.includes("lake") ? "Yes" : "—")],
+    ["Available", (l) => fmtDate(l.from)],
+  ];
+  function openCompare() {
+    const items = [...state.compare].map((id) => LISTINGS.find((l) => l.id === id)).filter(Boolean);
+    if (items.length < 2) { toast("Pick at least 2 places to compare"); return; }
+    const minP = Math.min(...items.map((l) => l.price)), minM = Math.min(...items.map((l) => l.minutes));
+    const head = `<div class="cmp-cell cmp-corner">${items.length} places</div>` + items.map((l) => `<div class="cmp-cell cmp-head"><div class="cmp-photo" data-open="${l.id}">${photo(l.id, 1, 320, 220)}</div><b>${l.area}</b><span>${l.city}</span><button class="cmp-view" data-open="${l.id}">View</button></div>`).join("");
+    const rows = CMP_ROWS.map(([label, fn, best]) => `<div class="cmp-cell cmp-label">${label}</div>` + items.map((l) => {
+      const hi = (best === "price" && l.price === minP) || (best === "min" && l.minutes === minM);
+      return `<div class="cmp-cell${hi ? " cmp-best" : ""}">${fn(l)}${hi ? ' <span class="cmp-badge">best</span>' : ""}</div>`;
+    }).join("")).join("");
+    modalRoot.innerHTML = `<div class="modal cmp-modal"><div class="modal-top"><button class="modal-x" data-close>${svg('<path d="M6 6l12 12M18 6 6 18"/>', { sw: 2 })}</button><h2>Compare stays</h2><span style="width:34px"></span></div>
+      <div class="modal-body"><div class="cmp-scroll"><div class="cmp-grid" style="grid-template-columns:118px repeat(${items.length},minmax(150px,1fr))">${head}${rows}</div></div></div></div>`;
+    openOverlay();
+  }
+
   /* ---------- main delegation ---------- */
   mainEl.addEventListener("click", (e) => {
     const fav = e.target.closest("[data-fav]"); if (fav) { e.stopPropagation(); toggleFav(+fav.dataset.fav); return; }
     const cz = e.target.closest("[data-cz]"); if (cz) { e.stopPropagation(); doCz(cz); return; }
+    const cmp = e.target.closest("[data-cmp]"); if (cmp) { e.stopPropagation(); toggleCompare(+cmp.dataset.cmp); return; }
     const rm = e.target.closest("[data-rm]"); if (rm) { removeFilter(rm.dataset.rm); return; }
     const hc = e.target.closest(".hchip"); if (hc) { applyTerm(hc.dataset.term); return; }
     const sa = e.target.closest("[data-seeall]"); if (sa) { applySeeAll(JSON.parse(sa.dataset.seeall)); return; }
@@ -599,10 +643,10 @@
   const SITE_TITLE = "HelpMeFind — Student stays near EHL";
   const getStayParam = () => new URLSearchParams(location.search).get("stay");
   let openStayId = null, pushedStay = false;
-  function openOverlay() { modalRoot.hidden = false; document.body.style.overflow = "hidden"; modalRoot.scrollTop = 0; }
+  function openOverlay() { modalRoot.hidden = false; document.body.style.overflow = "hidden"; document.body.classList.add("ov"); modalRoot.scrollTop = 0; }
   function closeOverlay(fromPop) {
     if (detailMap) { detailMap.remove(); detailMap = null; }
-    modalRoot.hidden = true; modalRoot.innerHTML = ""; document.body.style.overflow = "";
+    modalRoot.hidden = true; modalRoot.innerHTML = ""; document.body.style.overflow = ""; document.body.classList.remove("ov");
     document.title = SITE_TITLE;
     const wasStay = openStayId; openStayId = null;
     if (!fromPop && wasStay != null) {
@@ -621,6 +665,7 @@
     const f2 = e.target.closest("[data-fav2]");
     if (f2) { toggleFav(+f2.dataset.fav2); openModal(+f2.dataset.fav2); return; }
     const req = e.target.closest("[data-request]"); if (req) return submitRequest(+req.dataset.request);
+    const op = e.target.closest("[data-open]"); if (op) return openModal(+op.dataset.open);
     const go = e.target.closest("[data-go]"); if (go) { closeOverlay(); nav(go.dataset.go); return; }
     const sub = e.target.closest("[data-submit]"); if (sub) handleSheetSubmit(sub.dataset.submit, e);
   });
@@ -712,6 +757,9 @@
     else if (t === "saved") goSaved();
     else if (t === "requests") goRequests();
   });
+  $("#cmpGo").addEventListener("click", openCompare);
+  $("#cmpClear").addEventListener("click", () => { state.compare.clear(); document.querySelectorAll("[data-cmp].on").forEach((b) => { b.classList.remove("on"); b.textContent = "⇄ Compare"; }); renderTray(); });
+  cmpTray.addEventListener("click", (e) => { const t = e.target.closest("[data-cmprm]"); if (t) toggleCompare(+t.dataset.cmprm); });
 
   /* ---------- profile menu ---------- */
   const menu = $("#profileMenu");
