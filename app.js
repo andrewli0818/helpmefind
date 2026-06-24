@@ -121,7 +121,7 @@
   LISTINGS.forEach(setCoords);
 
   /* ---------- state ---------- */
-  const FAV_KEY = "hmf_favs", REQ_KEY = "hmf_reqs";
+  const FAV_KEY = "hmf_favs", REQ_KEY = "hmf_reqs", SRCH_KEY = "hmf_searches";
   const load = (k) => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
   const state = {
     view: "home",      // home | results | saved | requests
@@ -130,6 +130,7 @@
     sort: "recommended", maxPrice: null, maxMinutes: null, amen: new Set(), hood: null,
     favs: new Set(load(FAV_KEY)),
     requests: load(REQ_KEY),
+    searches: load(SRCH_KEY),
     compare: new Set(),
   };
   const saveFavs = () => localStorage.setItem(FAV_KEY, JSON.stringify([...state.favs]));
@@ -274,7 +275,11 @@
       <div class="row-head"><div><h2>🗺️ Explore Lausanne by neighbourhood</h2><p>Where EHL students actually live — and how far it really is from campus.</p></div></div>
       <div class="hood-grid">${HOODS.map(hoodCard).join("")}</div>
     </section>`;
-    $("#homeSections").innerHTML = rows + hoods;
+    const savedSec = state.searches.length ? `<section class="ss-sec">
+      <div class="row-head"><div><h2>🔔 Your saved searches</h2><p>Pick up where you left off — tap to run a search again.</p></div></div>
+      <div class="ss-list">${state.searches.map((s) => `<button class="ss-chip" data-ss="${s.id}"><span>${s.name}</span><i data-ssrm="${s.id}" aria-label="Remove">✕</i></button>`).join("")}</div>
+    </section>` : "";
+    $("#homeSections").innerHTML = savedSec + rows + hoods;
   }
 
   /* ---------- requests ---------- */
@@ -557,6 +562,40 @@
     openOverlay();
   }
 
+  /* ---------- saved searches ---------- */
+  const saveSearches = () => localStorage.setItem(SRCH_KEY, JSON.stringify(state.searches));
+  function describeFilters() {
+    const p = [];
+    if (state.type !== "any") p.push(TYPE_LABEL[state.type]);
+    if (state.kind !== "any") p.push(KIND_LABEL[state.kind]);
+    if (state.hood) p.push(state.hood.label);
+    if (state.category !== "all") p.push(CATS.find((c) => c.id === state.category).label);
+    if (state.where) p.push(`“${state.where}”`);
+    if (state.maxPrice) p.push(`≤ ${fmt(state.maxPrice)}`);
+    if (state.maxMinutes) p.push(`≤ ${state.maxMinutes} min`);
+    state.amen.forEach((a) => p.push(AMEN_LABEL[a] || a));
+    if (state.from || state.to) p.push(state.from && state.to ? `${fmtDate(state.from)}–${fmtDate(state.to)}` : state.from ? `from ${fmtDate(state.from)}` : `until ${fmtDate(state.to)}`);
+    return p.length ? p.join(" · ") : "All stays near EHL";
+  }
+  function saveCurrentSearch() {
+    const name = describeFilters();
+    if (state.searches.some((s) => s.name === name)) { toast("That search is already saved 🔔"); return; }
+    state.searches.unshift({
+      id: "s" + Date.now(), name,
+      f: { type: state.type, category: state.category, where: state.where, kind: state.kind, from: state.from, to: state.to, maxPrice: state.maxPrice, maxMinutes: state.maxMinutes, amen: [...state.amen], hood: state.hood ? { id: state.hood.id, label: state.hood.label, areas: [...state.hood.areas] } : null, sort: state.sort },
+    });
+    saveSearches();
+    toast("🔔 Search saved — find it on your home page");
+  }
+  function applySavedSearch(id) {
+    const s = state.searches.find((x) => x.id === id); if (!s) return;
+    resetFilters();
+    Object.assign(state, { type: s.f.type, category: s.f.category, where: s.f.where, kind: s.f.kind, from: s.f.from, to: s.f.to, maxPrice: s.f.maxPrice, maxMinutes: s.f.maxMinutes, sort: s.f.sort || "recommended", amen: new Set(s.f.amen || []) });
+    state.hood = s.f.hood ? { id: s.f.hood.id, label: s.f.hood.label, areas: new Set(s.f.hood.areas) } : null;
+    state.view = "results"; render(); scrollToContent();
+  }
+  function removeSavedSearch(id) { state.searches = state.searches.filter((x) => x.id !== id); saveSearches(); render(); }
+
   /* ---------- main delegation ---------- */
   mainEl.addEventListener("click", (e) => {
     const fav = e.target.closest("[data-fav]"); if (fav) { e.stopPropagation(); toggleFav(+fav.dataset.fav); return; }
@@ -566,6 +605,8 @@
     const hc = e.target.closest(".hchip"); if (hc) { applyTerm(hc.dataset.term); return; }
     const sa = e.target.closest("[data-seeall]"); if (sa) { applySeeAll(JSON.parse(sa.dataset.seeall)); return; }
     const hood = e.target.closest("[data-hood]"); if (hood) { openHoodGuide(hood.dataset.hood); return; }
+    const ssrm = e.target.closest("[data-ssrm]"); if (ssrm) { e.stopPropagation(); removeSavedSearch(ssrm.dataset.ssrm); return; }
+    const ss = e.target.closest("[data-ss]"); if (ss) { applySavedSearch(ss.dataset.ss); return; }
     const go = e.target.closest("[data-go]"); if (go) { nav(go.dataset.go); return; }
     const op = e.target.closest("[data-open]"); if (op) { openModal(+op.dataset.open); return; }
     const card = e.target.closest(".card"); if (card) openModal(+card.dataset.id);
@@ -846,6 +887,7 @@
   $("#viewToggle").addEventListener("click", (e) => { const b = e.target.closest("[data-vt]"); if (!b) return; state.layout = b.dataset.vt; render(); });
   $("#clearAll").addEventListener("click", goHome);
   $("#backHome").addEventListener("click", goHome);
+  $("#saveSearch").addEventListener("click", saveCurrentSearch);
 
   /* ---------- category scroll ---------- */
   const updateCatArrows = () => {

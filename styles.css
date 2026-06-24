@@ -710,3 +710,15 @@ input[type=range]{accent-color:var(--brand);width:100%}
 .lb-nav.prev{left:24px}.lb-nav.next{right:24px}
 .lb-count{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;font-weight:600;background:rgba(0,0,0,.4);padding:6px 14px;border-radius:20px}
 @media(max-width:560px){.lb-nav{width:40px;height:40px}.lb-nav.prev{left:10px}.lb-nav.next{right:10px}.lb-x{top:12px;right:12px}}
+
+/* ===================== v9: SAVED SEARCHES ===================== */
+.save-search{display:flex;align-items:center;gap:7px;border:1px solid var(--line-2);border-radius:11px;padding:9px 13px;font-size:13px;font-weight:700;color:var(--ink-2);transition:.12s}
+.save-search:hover{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-3)}
+.ss-sec{margin:8px 0 4px}
+.ss-list{display:flex;flex-wrap:wrap;gap:10px}
+.ss-chip{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line-2);background:#fff;border-radius:30px;padding:10px 8px 10px 16px;font-size:14px;font-weight:600;transition:.12s;max-width:100%}
+.ss-chip:hover{border-color:var(--brand);background:var(--brand-soft)}
+.ss-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-chip i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--gray);font-size:12px;flex-shrink:0;transition:.12s}
+.ss-chip i:hover{background:var(--line);color:var(--ink)}
+@media(max-width:560px){.save-search span,.save-search{font-size:12px}}
