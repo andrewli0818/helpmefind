@@ -332,6 +332,8 @@
 
   let browseMap = null, detailMap = null;
   function renderMap(list) {
+    const ml = $("#mapList");
+    if (ml) ml.innerHTML = `<div class="map-list-head">${list.length} ${list.length === 1 ? "stay" : "stays"} on the map</div>` + (list.length ? list.map(simCard).join("") : '<div class="map-list-empty">No stays match — adjust your filters.</div>');
     const host = $("#browseMap");
     if (!window.L) { host.innerHTML = '<div class="map-fallback">🗺️ The map needs an internet connection — it works on the live site.</div>'; return; }
     if (browseMap) { browseMap.remove(); browseMap = null; }
