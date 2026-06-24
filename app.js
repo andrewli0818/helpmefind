@@ -202,9 +202,21 @@
     state.category !== "all" || state.type !== "any" || state.kind !== "any" || !!state.where || !!state.from || !!state.to || state.maxPrice != null || state.maxMinutes != null || state.amen.size > 0 || state.hood != null;
   const currentList = () => state.view === "saved" ? LISTINGS.filter((l) => state.favs.has(l.id)) : filtered();
 
+  /* ---------- price insight ---------- */
+  function priceInsight(l) {
+    const peers = LISTINGS.filter((x) => x.kind === l.kind);
+    if (peers.length < 3) return null;
+    const avg = peers.reduce((s, x) => s + x.price, 0) / peers.length;
+    const diff = (avg - l.price) / avg;
+    if (diff >= 0.12) return { label: "Great price", pct: Math.round(diff * 100) };
+    if (diff >= 0.05) return { label: "Good price", pct: Math.round(diff * 100) };
+    return null;
+  }
+
   /* ---------- card ---------- */
   function cardHTML(l) {
     const fav = state.favs.has(l.id);
+    const ins = priceInsight(l);
     const n = 3;
     const slides = Array.from({ length: n }, (_, i) => `<div class="slide">${photo(l.id, i + 1)}</div>`).join("");
     const dots = Array.from({ length: n }, (_, i) => `<i class="${i === 0 ? "on" : ""}"></i>`).join("");
@@ -227,7 +239,7 @@
         </div>
         <div class="card-sub">${l.rooms} · ${KIND_LABEL[l.kind]}</div>
         <div class="card-sub dist">${icon("pin")} ${l.minutes} min to EHL · ${l.transit}</div>
-        <div class="card-price"><b>${fmt(l.price)}</b> <span class="per">/ month</span></div>
+        <div class="card-price"><b>${fmt(l.price)}</b> <span class="per">/ month</span>${ins ? `<span class="deal">${ins.label}</span>` : ""}</div>
       </div>
     </article>`;
   }
@@ -688,6 +700,7 @@
   function openModal(id, fromPop) {
     const l = LISTINGS.find((x) => x.id === id); if (!l) return;
     const fav = state.favs.has(id);
+    const ins = priceInsight(l);
     const deposit = l.price * 2;
     const gallery = Array.from({ length: 5 }, (_, i) => `<div class="g" data-gp="${i}">${photo(l.id, i + 1, 800, 700)}</div>`).join("");
     const amens = l.amenities.map((a) => `<div class="amen">${icon(a)}<span>${AMEN_LABEL[a] || a}</span></div>`).join("");
@@ -737,6 +750,7 @@
           </div>
           <aside class="book">
             <div class="book-price">${fmt(l.price)} <span>/ month</span></div>
+            ${ins ? `<div class="deal-note">💸 ${ins.label} · about ${ins.pct}% below similar ${KIND_LABEL[l.kind].toLowerCase()}s near EHL</div>` : ""}
             <div class="book-rate">${l.reviews ? star + " " + l.rating.toFixed(2) + " · " + l.reviews + " reviews" : "✦ New listing"}</div>
             <div class="book-fields">
               <div class="bf-row">

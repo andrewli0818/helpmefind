@@ -722,3 +722,7 @@ input[type=range]{accent-color:var(--brand);width:100%}
 .ss-chip i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--gray);font-size:12px;flex-shrink:0;transition:.12s}
 .ss-chip i:hover{background:var(--line);color:var(--ink)}
 @media(max-width:560px){.save-search span,.save-search{font-size:12px}}
+
+/* ===================== v10: PRICE INSIGHT ===================== */
+.deal{display:inline-block;background:#e6f7ec;color:#1d8a4e;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle}
+.deal-note{background:#e6f7ec;color:#1a7a45;font-size:13px;font-weight:700;padding:9px 12px;border-radius:10px;margin-bottom:14px}
