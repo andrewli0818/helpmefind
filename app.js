@@ -310,7 +310,7 @@
         <div class="req-info">
           <b>${l.area}, ${l.city}</b>
           <span>${TYPE_LABEL[l.type]} · ${l.rooms} · ${fmt(l.price)}/mo</span>
-          <span class="req-meta">Requested move-in ${fmtDate(r.from)} · sent to ${l.host.name}</span>
+          <span class="req-meta">Move-in ${fmtDate(r.from)}${r.who ? " · as " + r.who : ""} · sent to ${l.host.name}</span>
         </div>
         <div class="req-status">Requested</div>
       </div>`;
@@ -828,7 +828,7 @@
     if (e.target.closest("[data-share]")) return toast("Listing link copied to clipboard (demo)");
     const f2 = e.target.closest("[data-fav2]");
     if (f2) { toggleFav(+f2.dataset.fav2); openModal(+f2.dataset.fav2); return; }
-    const req = e.target.closest("[data-request]"); if (req) return submitRequest(+req.dataset.request);
+    const req = e.target.closest("[data-request]"); if (req) return openRequestForm(+req.dataset.request);
     const gp = e.target.closest("[data-gp]"); if (gp) return openLightbox(openStayId, +gp.dataset.gp);
     const op = e.target.closest("[data-open]"); if (op) return openModal(+op.dataset.open);
     const hg = e.target.closest("[data-hoodgo]"); if (hg) { const h = HOODS.find((x) => x.id === hg.dataset.hoodgo); closeOverlay(); applyHood(h); return; }
@@ -848,16 +848,33 @@
   }
 
   /* ---------- viewing-request flow ---------- */
-  function submitRequest(id) {
+  let reqListingId = null;
+  function openRequestForm(id) {
     const l = LISTINGS.find((x) => x.id === id); if (!l) return;
+    reqListingId = id;
     const fromEl = document.querySelector('[data-bf="from"]');
     const from = fromEl && fromEl.value ? fromEl.value : l.from;
-    if (!state.requests.some((r) => r.id === id)) state.requests.unshift({ id, from });
-    saveReqs(); updateSavedCount();
+    const fname = l.host.name.split(" ")[0];
+    sheet(`
+      <h1 class="modal-h1">Request a viewing</h1>
+      <p class="lede">Send ${l.host.name} a quick intro — ${l.host.student ? "they're an EHL student too" : "the host"} and usually reply within a day. No fees, no commitment.</p>
+      <form id="reqForm">
+        <div class="field-row">
+          <div class="field"><label>Preferred move-in</label><input name="from" type="date" value="${from}"></div>
+          <div class="field"><label>You are</label><select name="who">
+            <option>1st-year BOSC</option><option>2nd-year BOSC</option><option>3rd/4th-year BOSC</option><option>Master student</option><option>Exchange student</option><option>EHL staff</option>
+          </select></div>
+        </div>
+        <div class="field"><label>Intro message to ${fname}</label><textarea name="msg" rows="4">Hi ${fname}, I'm an EHL student looking for a place near campus for ${l.to ? "the semester" : "the year"}. Your ${KIND_LABEL[l.kind].toLowerCase()} in ${l.area} looks great — could we arrange a viewing? Thanks!</textarea></div>
+        <button class="primary-btn" data-submit="request" type="button">Send viewing request</button>
+        <p class="book-hint">No booking fees · You arrange the visit directly with ${l.host.name}</p>
+      </form>`);
+  }
+  function showRequestConfirm(l) {
     sheet(`<div class="confirm">
       <div class="confirm-ic">${icon("check")}</div>
       <h1 class="modal-h1">Viewing requested 🎉</h1>
-      <p class="lede">We've shared your interest in <b>${l.area}</b> with <b>${l.host.name}</b>. ${l.host.student ? "They" : "The host"} usually reply within a day. There are no fees — you arrange the visit and lease directly.</p>
+      <p class="lede">Your intro has been sent to <b>${l.host.name}</b> about <b>${l.area}</b>. ${l.host.student ? "They" : "The host"} usually reply within a day. There are no fees — you arrange the visit and lease directly.</p>
       <button class="primary-btn" data-go="requests">See my viewing requests</button>
       <button class="ghost-btn" data-close>Keep browsing</button>
     </div>`);
@@ -1067,6 +1084,17 @@
   $("#filtersBtn").addEventListener("click", openFiltersSheet);
 
   function handleSheetSubmit(kind) {
+    if (kind === "request") {
+      const f = $("#reqForm"); if (!f.reportValidity()) return;
+      const d = Object.fromEntries(new FormData(f));
+      const l = LISTINGS.find((x) => x.id === reqListingId); if (!l) return;
+      const existing = state.requests.find((r) => r.id === reqListingId);
+      if (existing) Object.assign(existing, { from: d.from || l.from, who: d.who, msg: d.msg });
+      else state.requests.unshift({ id: reqListingId, from: d.from || l.from, who: d.who, msg: d.msg });
+      saveReqs(); updateSavedCount();
+      showRequestConfirm(l);
+      return;
+    }
     if (kind === "filters") {
       const form = $("#filtForm");
       state.kind = form.kind.value;
