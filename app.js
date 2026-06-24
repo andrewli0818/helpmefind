@@ -125,7 +125,7 @@
     view: "home",      // home | results | saved | requests
     layout: "list",    // list | map  (within results/saved)
     type: "any", category: "all", where: "", kind: "any", from: "", to: "",
-    sort: "recommended", maxPrice: null, maxMinutes: null, amen: new Set(),
+    sort: "recommended", maxPrice: null, maxMinutes: null, amen: new Set(), hood: null,
     favs: new Set(load(FAV_KEY)),
     requests: load(REQ_KEY),
     compare: new Set(),
@@ -173,6 +173,7 @@
       if (state.category !== "all" && !l.cats.includes(state.category)) return false;
       if (state.maxPrice && l.price > state.maxPrice) return false;
       if (state.maxMinutes && l.minutes > state.maxMinutes) return false;
+      if (state.hood && !state.hood.areas.has(l.area)) return false;
       if (state.amen.size && ![...state.amen].every((a) => l.amenities.includes(a))) return false;
       if (w) {
         const hay = `${l.area} ${l.city} ${l.transit} ${KIND_LABEL[l.kind]} ${TYPE_LABEL[l.type]}`.toLowerCase();
@@ -195,7 +196,7 @@
     return out;
   }
   const hasActiveFilter = () =>
-    state.category !== "all" || state.type !== "any" || state.kind !== "any" || !!state.where || !!state.from || !!state.to || state.maxPrice != null || state.maxMinutes != null || state.amen.size > 0;
+    state.category !== "all" || state.type !== "any" || state.kind !== "any" || !!state.where || !!state.from || !!state.to || state.maxPrice != null || state.maxMinutes != null || state.amen.size > 0 || state.hood != null;
   const currentList = () => state.view === "saved" ? LISTINGS.filter((l) => state.favs.has(l.id)) : filtered();
 
   /* ---------- card ---------- */
@@ -228,6 +229,25 @@
     </article>`;
   }
 
+  /* ---------- neighbourhood guides ---------- */
+  const HOODS = [
+    { id: "epalinges", name: "Épalinges", emoji: "🌳", areas: ["Épalinges"], commute: "8 min to EHL", rent: "CHF 1,200–1,400", center: [46.5556, 6.6694], blurb: "The closest residential hub to campus — quiet, leafy and a quick bus 64 up to EHL. The default pick for students who want calm and a short commute." },
+    { id: "campus", name: "Le Chalet-à-Gobet & around", emoji: "🌲", areas: ["Le Chalet-à-Gobet", "Belmont-sur-Lausanne", "Le Mont-sur-Lausanne"], commute: "4–14 min to EHL", rent: "CHF 800–1,250", center: [46.565, 6.68], blurb: "Right at EHL's doorstep, ringed by forest and trails. Mostly shared student flats — roll out of bed and walk to class." },
+    { id: "ouchy", name: "Ouchy & the lakefront", emoji: "⛵", areas: ["Ouchy", "Pully", "Lutry"], commute: "22–30 min to EHL", rent: "CHF 1,400–1,650", center: [46.506, 6.645], blurb: "Lausanne's lakeside. Wake up to Lac Léman, walk the promenade, hop the M2. Pricier and a longer ride, but hard to beat for the views." },
+    { id: "centre", name: "Centre & Flon", emoji: "🌃", areas: ["Lausanne Centre", "Lausanne Flon"], commute: "25 min to EHL", rent: "CHF 850–1,000", center: [46.5205, 6.631], blurb: "The heart of the action — bars, gym and every metro line at your door. The most social base, with a longer commute as the trade-off." },
+    { id: "west", name: "West side (M1)", emoji: "🚇", areas: ["Renens", "Prilly", "Crissier"], commute: "25–28 min to EHL", rent: "CHF 700–1,150", center: [46.54, 6.59], blurb: "The budget-friendly, well-connected west. The M1 metro links it all and rents are the best value in town — popular with first-years." },
+    { id: "riviera", name: "Riviera · Vevey & Montreux", emoji: "🍇", areas: ["Vevey", "Montreux"], commute: "35–38 min to EHL", rent: "CHF 1,380–1,740", center: [46.45, 6.87], blurb: "The scenic stretch toward Montreux. A longer but beautiful train commute, lakefront living, and more space for your money." },
+  ];
+  function hoodCard(h) {
+    const items = LISTINGS.filter((l) => h.areas.includes(l.area)), rep = items[0];
+    return `<button class="hood-card" data-hood="${h.id}">
+      <div class="hood-card-img">${photo(rep ? rep.id : 0, 2, 240, 240)}</div>
+      <div class="hood-card-b"><b>${h.emoji} ${h.name}</b><p>${h.blurb}</p>
+        <div class="hood-meta"><span>${icon("campus")} ${h.commute}</span><span>${items.length} place${items.length !== 1 ? "s" : ""}</span></div>
+      </div>
+    </button>`;
+  }
+
   /* ---------- curated home ---------- */
   const SECTIONS = [
     { title: "📍 Closest to campus", sub: "A quick walk or one bus to EHL", filter: (l) => l.minutes <= 15, sort: (a, b) => a.minutes - b.minutes, seeall: { category: "campus" } },
@@ -237,7 +257,7 @@
     { title: "🌅 Lake views", sub: "Wake up to Lac Léman", filter: (l) => l.cats.includes("lake"), sort: byRec, seeall: { category: "lake" } },
   ];
   function renderHome() {
-    $("#homeSections").innerHTML = SECTIONS.map((sec) => {
+    const rows = SECTIONS.map((sec) => {
       const items = LISTINGS.filter(sec.filter).sort(sec.sort).slice(0, 8);
       if (!items.length) return "";
       return `<section class="row-sec">
@@ -248,6 +268,11 @@
         <div class="row">${items.map(cardHTML).join("")}</div>
       </section>`;
     }).join("");
+    const hoods = `<section class="hood-sec">
+      <div class="row-head"><div><h2>🗺️ Explore Lausanne by neighbourhood</h2><p>Where EHL students actually live — and how far it really is from campus.</p></div></div>
+      <div class="hood-grid">${HOODS.map(hoodCard).join("")}</div>
+    </section>`;
+    $("#homeSections").innerHTML = rows + hoods;
   }
 
   /* ---------- requests ---------- */
@@ -311,6 +336,39 @@
     try { detailMap.fitBounds([[l.lat, l.lng], [EHL.lat, EHL.lng]], { padding: [45, 45], maxZoom: 14 }); } catch (e) {}
     setTimeout(() => detailMap && detailMap.invalidateSize(), 130);
   }
+  let hoodMap = null;
+  function initHoodMap(h, items) {
+    const host = document.getElementById("hoodMap"); if (!host) return;
+    if (!window.L) { host.innerHTML = '<div class="map-fallback">🗺️ Map needs internet — works on the live site.</div>'; return; }
+    if (hoodMap) { hoodMap.remove(); hoodMap = null; }
+    hoodMap = L.map(host, { scrollWheelZoom: false }).setView(h.center, 13);
+    L.tileLayer(TILES, { maxZoom: 19, attribution: ATTR }).addTo(hoodMap);
+    L.marker([EHL.lat, EHL.lng], { icon: campusDiv(), zIndexOffset: 1000 }).addTo(hoodMap).bindPopup("<b>🎓 EHL Campus</b>");
+    const pts = [[EHL.lat, EHL.lng]];
+    items.forEach((l) => { if (l.lat == null) return; L.marker([l.lat, l.lng], { icon: priceDiv(l) }).addTo(hoodMap).bindPopup(mapPopup(l), { maxWidth: 260, minWidth: 240 }); pts.push([l.lat, l.lng]); });
+    if (pts.length > 1) hoodMap.fitBounds(pts, { padding: [45, 45] });
+    setTimeout(() => hoodMap && hoodMap.invalidateSize(), 130);
+  }
+  function openHoodGuide(id) {
+    const h = HOODS.find((x) => x.id === id); if (!h) return;
+    const items = LISTINGS.filter((l) => h.areas.includes(l.area));
+    sheet(`
+      <h1 class="modal-h1">${h.emoji} ${h.name}</h1>
+      <p class="lede">${h.blurb}</p>
+      <div class="hood-stats">
+        <div><b>${h.commute}</b><span>Commute to EHL</span></div>
+        <div><b>${h.rent}</b><span>Typical rent / mo</span></div>
+        <div><b>${items.length}</b><span>Places listed</span></div>
+      </div>
+      <div id="hoodMap" class="detail-map" style="height:250px;margin:18px 0 6px"></div>
+      <button class="primary-btn" data-hoodgo="${h.id}">Browse ${items.length} place${items.length !== 1 ? "s" : ""} in ${h.name}</button>`);
+    initHoodMap(h, items);
+  }
+  function applyHood(h) {
+    resetFilters();
+    state.hood = { id: h.id, label: h.name, areas: new Set(h.areas) };
+    state.view = "results"; render(); scrollToContent();
+  }
 
   /* ---------- chrome / view switching ---------- */
   function setChrome() {
@@ -341,7 +399,8 @@
     }
     const cat = state.category !== "all" ? " · " + CATS.find((c) => c.id === state.category).label.toLowerCase() : "";
     const ty = state.type !== "any" ? " · " + TYPE_LABEL[state.type].toLowerCase() : "";
-    $("#resultCount").textContent = `${list.length} ${list.length === 1 ? "stay" : "stays"}${cat}${ty} near EHL`;
+    const hd = state.hood ? ` in ${state.hood.label}` : " near EHL";
+    $("#resultCount").textContent = `${list.length} ${list.length === 1 ? "stay" : "stays"}${cat}${ty}${hd}`;
   }
   function showEmpty(mode) {
     $("#grid").innerHTML = "";
@@ -365,6 +424,7 @@
     if (state.type !== "any") chips.push(["type", TYPE_LABEL[state.type]]);
     if (state.kind !== "any") chips.push(["kind", KIND_LABEL[state.kind]]);
     if (state.category !== "all") chips.push(["category", CATS.find((x) => x.id === state.category).label]);
+    if (state.hood) chips.push(["hood", `📍 ${state.hood.label}`]);
     if (state.where) chips.push(["where", `“${state.where}”`]);
     if (state.maxPrice) chips.push(["maxPrice", `≤ ${fmt(state.maxPrice)}`]);
     if (state.maxMinutes) chips.push(["maxMinutes", `≤ ${state.maxMinutes} min to EHL`]);
@@ -381,6 +441,7 @@
     else if (k === "type") state.type = "any";
     else if (k === "kind") state.kind = "any";
     else if (k === "category") state.category = "all";
+    else if (k === "hood") state.hood = null;
     else if (k === "where") state.where = "";
     else if (k === "maxPrice") state.maxPrice = null;
     else if (k === "maxMinutes") state.maxMinutes = null;
@@ -407,7 +468,7 @@
 
   /* ---------- navigation ---------- */
   function resetFilters() {
-    Object.assign(state, { type: "any", category: "all", where: "", kind: "any", from: "", to: "", maxPrice: null, maxMinutes: null, amen: new Set(), sort: "recommended", layout: "list" });
+    Object.assign(state, { type: "any", category: "all", where: "", kind: "any", from: "", to: "", maxPrice: null, maxMinutes: null, amen: new Set(), hood: null, sort: "recommended", layout: "list" });
   }
   function scrollToContent() {
     if (state.view === "home") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
@@ -502,6 +563,7 @@
     const rm = e.target.closest("[data-rm]"); if (rm) { removeFilter(rm.dataset.rm); return; }
     const hc = e.target.closest(".hchip"); if (hc) { applyTerm(hc.dataset.term); return; }
     const sa = e.target.closest("[data-seeall]"); if (sa) { applySeeAll(JSON.parse(sa.dataset.seeall)); return; }
+    const hood = e.target.closest("[data-hood]"); if (hood) { openHoodGuide(hood.dataset.hood); return; }
     const go = e.target.closest("[data-go]"); if (go) { nav(go.dataset.go); return; }
     const op = e.target.closest("[data-open]"); if (op) { openModal(+op.dataset.open); return; }
     const card = e.target.closest(".card"); if (card) openModal(+card.dataset.id);
@@ -646,6 +708,7 @@
   function openOverlay() { modalRoot.hidden = false; document.body.style.overflow = "hidden"; document.body.classList.add("ov"); modalRoot.scrollTop = 0; }
   function closeOverlay(fromPop) {
     if (detailMap) { detailMap.remove(); detailMap = null; }
+    if (hoodMap) { hoodMap.remove(); hoodMap = null; }
     modalRoot.hidden = true; modalRoot.innerHTML = ""; document.body.style.overflow = ""; document.body.classList.remove("ov");
     document.title = SITE_TITLE;
     const wasStay = openStayId; openStayId = null;
@@ -666,6 +729,7 @@
     if (f2) { toggleFav(+f2.dataset.fav2); openModal(+f2.dataset.fav2); return; }
     const req = e.target.closest("[data-request]"); if (req) return submitRequest(+req.dataset.request);
     const op = e.target.closest("[data-open]"); if (op) return openModal(+op.dataset.open);
+    const hg = e.target.closest("[data-hoodgo]"); if (hg) { const h = HOODS.find((x) => x.id === hg.dataset.hoodgo); closeOverlay(); applyHood(h); return; }
     const go = e.target.closest("[data-go]"); if (go) { closeOverlay(); nav(go.dataset.go); return; }
     const sub = e.target.closest("[data-submit]"); if (sub) handleSheetSubmit(sub.dataset.submit, e);
   });
