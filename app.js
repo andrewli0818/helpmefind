@@ -59,13 +59,17 @@
     "1493663284031-b7e3aefcae8e", "1567767292278-a4f21aa2d36e", "1522771739844-6a9f6d5f14af",
     "1502005229762-cf1b2da7c5d6", "1586023492125-27b2c045efd7", "1598928506311-c55ded91a20c",
     "1583847268964-b28dc8f51f92", "1505691938895-1758d7feb511", "1556228453-efd6c1ff04f6",
+    "1484101403633-562f891dc89a", "1497366216548-37526070297c", "1497366811353-6870744d04b2",
+    "1524758631624-e2822e304c36", "1540574163026-643ea20ade25", "1505873242700-f289a29e1e0f",
+    "1567016432779-094069958ea5", "1558997519-83ea9252edf8", "1560448075-bb485b067938",
+    "1616486338812-3dadae4b4ace", "1616594039964-ae9021a400a0", "1617104678098-de229db51175",
   ];
-  const photo = (id, i, w = 640, h = 600) => {
-    const u = UNSPLASH[(id * 3 + i) % UNSPLASH.length];
+  const photo = (id, i, w = 640, h = 600, alt = "") => {
+    const u = UNSPLASH[(id * 7 + i) % UNSPLASH.length];
     const us = `https://images.unsplash.com/photo-${u}?auto=format&fit=crop&w=${w}&q=70`;
     const ps = `https://picsum.photos/seed/hmf${id}-${i}/${w}/${h}`;
     const ghost = houseGhost.replace("<svg", '<svg class="ph-ico"');
-    return `<div class="ph" style="background:${gradFor(id + i)}">${ghost}<img loading="lazy" alt="" src="${us}" data-ps="${ps}" onerror="if(this.dataset.ps){this.src=this.dataset.ps;this.dataset.ps='';}else{this.remove();}"></div>`;
+    return `<div class="ph" style="background:${gradFor(id + i)}">${ghost}<img loading="lazy" alt="${alt}" src="${us}" data-ps="${ps}" onload="this.parentElement.classList.add('loaded')" onerror="if(this.dataset.ps){this.src=this.dataset.ps;this.dataset.ps='';}else{this.remove();}"></div>`;
   };
 
   /* ---------- categories ---------- */
@@ -106,6 +110,20 @@
     { id: 14, area: "Le Mont-sur-Lausanne", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1240, beds: 1, baths: 1, guests: 2, rating: 4.81, reviews: 30, minutes: 12, transit: "Bus 8 / 60", fav: false, from: "2026-09-01", to: null, host: { name: "Dubois SA", initials: "DS", student: false, since: 2019 }, cats: ["campus", "studio", "furnished", "transit", "quiet", "new"], amenities: ["wifi", "furnished", "wash", "kitchen", "desk", "balcony", "heat"], desc: "New studio in Le Mont, one of the closest calm suburbs to EHL. Furnished with a comfy study setup and a small balcony. Quick bus links to campus and town." },
     { id: 15, area: "Lausanne Flon", city: "Lausanne", type: "sublease", kind: "room", rooms: "Room in 3.5", price: 990, beds: 1, baths: 1, guests: 1, rating: 4.74, reviews: 25, minutes: 25, transit: "All metro lines at Flon", fav: false, from: "2026-07-01", to: "2026-09-30", host: { name: "Ines", initials: "I", student: true, since: 2024 }, cats: ["shared", "transit", "short", "furnished"], amenities: ["wifi", "furnished", "wash", "kitchen", "elevator"], desc: "Summer sublet in the heart of Flon — bars, gym and every metro line at your door. Perfect for a summer internship in Lausanne. Three-person flat, fully furnished." },
     { id: 16, area: "Belmont-sur-Lausanne", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 5.5", price: 810, beds: 1, baths: 2, guests: 1, rating: 4.69, reviews: 31, minutes: 14, transit: "Bus 47 to campus", fav: false, from: "2026-09-01", to: null, host: { name: "Gabriel", initials: "G", student: true, since: 2023 }, cats: ["campus", "shared", "budget", "quiet", "pet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "bike", "parking", "balcony"], desc: "Big room in a house-share in Belmont, close to EHL and surrounded by fields. Garden, BBQ, parking and bikes. Five easy-going students, dog-friendly home." },
+    { id: 17, area: "Ecublens", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 4.5", price: 690, beds: 1, baths: 1, guests: 1, rating: 4.58, reviews: 23, minutes: 26, transit: "M1 metro (UNIL/EPFL)", fav: false, from: "2026-09-01", to: null, host: { name: "Yanis", initials: "Y", student: true, since: 2024 }, cats: ["shared", "budget", "transit"], amenities: ["wifi", "wash", "kitchen", "bike", "desk"], desc: "Cheapest room near the M1 — shared with UNIL and EPFL students. A bit further from EHL but unbeatable on rent, with the metro at the door." },
+    { id: 18, area: "St-Sulpice", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1390, beds: 1, baths: 1, guests: 2, rating: 4.9, reviews: 40, minutes: 24, transit: "Bus 31 + M1", fav: true, from: "2026-08-01", to: null, host: { name: "Régie du Lac", initials: "RL", student: false, since: 2018 }, cats: ["lake", "studio", "furnished", "quiet"], amenities: ["wifi", "furnished", "lake", "wash", "kitchen", "balcony", "bath"], desc: "Bright lakeside studio in calm St-Sulpice, right by the shore and the rowing club. A scenic, quiet base for a focused year." },
+    { id: 19, area: "Morges", city: "Morges", type: "sublease", kind: "apartment", rooms: "2.5 rooms", price: 1490, beds: 2, baths: 1, guests: 3, rating: 4.86, reviews: 29, minutes: 33, transit: "Direct train to Lausanne", fav: false, from: "2026-07-05", to: "2027-01-15", host: { name: "Camille", initials: "C", student: true, since: 2023 }, cats: ["lake", "whole", "furnished", "short"], amenities: ["wifi", "furnished", "lake", "wash", "dish", "kitchen", "balcony", "parking"], desc: "Subletting our 2.5 in Morges for the autumn — lakefront town with a marina and weekly market. Direct trains to Lausanne, great shared between two." },
+    { id: 20, area: "Chavannes-près-Renens", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 5.5", price: 700, beds: 1, baths: 2, guests: 1, rating: 4.5, reviews: 16, minutes: 27, transit: "M1 metro", fav: false, from: "2026-09-10", to: null, host: { name: "Dora", initials: "D", student: true, since: 2025 }, cats: ["shared", "budget", "transit"], amenities: ["wifi", "wash", "kitchen", "bike"], desc: "Room in a lively student house between UNIL and town. Big common room, weekly flat dinners, and bills split evenly. Budget-friendly and social." },
+    { id: 21, area: "Épalinges", city: "Lausanne", type: "sublease", kind: "studio", rooms: "1.5 rooms", price: 1250, beds: 1, baths: 1, guests: 1, rating: 4.84, reviews: 34, minutes: 9, transit: "Bus 64 / M2 Croisettes", fav: true, from: "2026-07-01", to: "2026-12-31", host: { name: "Lucas", initials: "L", student: true, since: 2024 }, cats: ["campus", "studio", "furnished", "short", "transit"], amenities: ["wifi", "furnished", "wash", "kitchen", "desk", "bath"], desc: "Subletting my Épalinges studio while I'm on internship abroad — minutes from EHL by bus, fully furnished, just bring a suitcase." },
+    { id: 22, area: "Pully", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 4.5", price: 950, beds: 1, baths: 1, guests: 1, rating: 4.79, reviews: 28, minutes: 23, transit: "Train + bus", fav: false, from: "2026-09-01", to: null, host: { name: "Elif", initials: "E", student: true, since: 2024 }, cats: ["shared", "furnished", "lake", "quiet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "balcony"], desc: "Room in an elegant Pully flat with lake glimpses from the balcony. Quiet, residential and shared with two friendly 3rd-year students." },
+    { id: 23, area: "Lausanne Centre", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1490, beds: 1, baths: 1, guests: 1, rating: 4.88, reviews: 52, minutes: 25, transit: "All metro lines at Flon", fav: false, from: "2026-08-01", to: null, host: { name: "Gérance Centre-Ville", initials: "GC", student: false, since: 2016 }, cats: ["studio", "furnished", "transit", "new"], amenities: ["wifi", "furnished", "wash", "kitchen", "elevator", "heat"], desc: "Modern studio steps from Flon — nightlife, gym and every metro line on your doorstep. The most central base, if you don't mind the commute up." },
+    { id: 24, area: "Bussigny", city: "Lausanne", type: "rent", kind: "apartment", rooms: "2.5 rooms", price: 1650, beds: 2, baths: 1, guests: 3, rating: 4.72, reviews: 24, minutes: 29, transit: "Train + M1", fav: false, from: "2026-09-01", to: null, host: { name: "Helvetia Living", initials: "HL", student: false, since: 2020 }, cats: ["whole", "furnished", "quiet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "balcony", "parking"], desc: "Spacious 2.5 in quiet Bussigny, perfect to split with a flatmate. New building, parking included, quick train into Lausanne." },
+    { id: 25, area: "Lutry", city: "Lausanne", type: "sublease", kind: "room", rooms: "Room in 3.5", price: 880, beds: 1, baths: 1, guests: 1, rating: 4.81, reviews: 22, minutes: 30, transit: "Train to Lausanne + bus", fav: false, from: "2026-07-15", to: "2026-09-30", host: { name: "Théo", initials: "T", student: true, since: 2025 }, cats: ["lake", "shared", "short", "furnished"], amenities: ["wifi", "furnished", "lake", "wash", "kitchen"], desc: "Summer sublet in the Lutry vineyards with a lake view — ideal for an internship stint. Two relaxed flatmates and sunsets over the water." },
+    { id: 26, area: "Renens", city: "Lausanne", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1080, beds: 1, baths: 1, guests: 1, rating: 4.6, reviews: 19, minutes: 27, transit: "M1 / Renens gare", fav: false, from: "2026-09-01", to: null, host: { name: "Gérance Léman", initials: "GL", student: false, since: 2017 }, cats: ["studio", "budget", "transit", "furnished"], amenities: ["wifi", "furnished", "wash", "kitchen", "heat"], desc: "Well-priced studio by Renens station — fast trains and the M1 in every direction. Solid value with shops and gyms all around." },
+    { id: 27, area: "Le Mont-sur-Lausanne", city: "Lausanne", type: "flatshare", kind: "room", rooms: "Room in 4.5", price: 830, beds: 1, baths: 1, guests: 1, rating: 4.77, reviews: 26, minutes: 12, transit: "Bus 8 / 60", fav: true, from: "2026-08-15", to: null, host: { name: "Manon", initials: "M", student: true, since: 2024 }, cats: ["campus", "shared", "furnished", "quiet"], amenities: ["wifi", "furnished", "wash", "dish", "kitchen", "bike", "balcony"], desc: "Room in a calm Le Mont flat, one of the closest suburbs to EHL. South-facing balcony, two easy-going flatmates and a quick bus to campus." },
+    { id: 28, area: "Cully", city: "Lavaux", type: "rent", kind: "studio", rooms: "1.5 rooms", price: 1320, beds: 1, baths: 1, guests: 2, rating: 4.95, reviews: 31, minutes: 32, transit: "Train to Lausanne", fav: false, from: "2026-08-01", to: null, host: { name: "Famille Rochat", initials: "FR", student: false, since: 2019 }, cats: ["lake", "studio", "furnished", "quiet", "pet"], amenities: ["wifi", "furnished", "lake", "wash", "kitchen", "balcony", "parking", "heat"], desc: "Studio in the UNESCO Lavaux vineyards above Cully — terraced vines, lake and a tiny harbour. Pets welcome. The most scenic commute you'll find." },
+    { id: 29, area: "Prilly", city: "Lausanne", type: "sublease", kind: "studio", rooms: "1.5 rooms", price: 1120, beds: 1, baths: 1, guests: 1, rating: 4.64, reviews: 18, minutes: 26, transit: "M1 + bus", fav: false, from: "2026-07-01", to: "2027-01-31", host: { name: "Sven", initials: "S", student: true, since: 2024 }, cats: ["studio", "budget", "transit", "short", "furnished"], amenities: ["wifi", "furnished", "wash", "kitchen"], desc: "Autumn-semester sublet in Prilly — furnished studio, quick M1 hop to town. Taking over my lease while I'm on exchange." },
+    { id: 30, area: "Ouchy", city: "Lausanne", type: "rent", kind: "apartment", rooms: "3.5 rooms", price: 2200, beds: 3, baths: 2, guests: 4, rating: 4.93, reviews: 44, minutes: 22, transit: "M2 metro", fav: false, from: "2026-09-01", to: null, host: { name: "Régie de la Côte", initials: "RC", student: false, since: 2015 }, cats: ["lake", "whole", "furnished", "quiet"], amenities: ["wifi", "furnished", "lake", "wash", "dish", "kitchen", "balcony", "parking", "elevator", "bath"], desc: "Large lakefront apartment in Ouchy to share between 3–4 — split it and the rent per person is very reasonable. Two bathrooms, balcony, M2 nearby." },
   ];
 
   /* ---------- geo ---------- */
@@ -116,8 +134,15 @@
     "Lutry": [46.5030, 6.6870], "Prilly": [46.5350, 6.6030], "Vevey": [46.4628, 6.8419],
     "Crissier": [46.5500, 6.5790], "Chailly": [46.5230, 6.6520], "Montreux": [46.4312, 6.9107],
     "Le Mont-sur-Lausanne": [46.5560, 6.6370], "Lausanne Flon": [46.5210, 6.6300], "Belmont-sur-Lausanne": [46.5170, 6.6700],
+    "Ecublens": [46.5283, 6.5631], "St-Sulpice": [46.5106, 6.5560], "Morges": [46.5089, 6.4983],
+    "Chavannes-près-Renens": [46.5300, 6.5720], "Bussigny": [46.5470, 6.5520], "Cully": [46.4894, 6.7300],
   };
-  const setCoords = (l) => { const c = COORDS[l.area]; if (c) { l.lat = c[0]; l.lng = c[1]; } else { l.lat = EHL.lat + (((l.id * 7) % 9) - 4) / 120; l.lng = EHL.lng + (((l.id * 5) % 9) - 4) / 120; } };
+  // small per-listing jitter so multiple stays in the same area don't stack on one pin
+  const setCoords = (l) => {
+    const c = COORDS[l.area], jl = (((l.id * 37) % 21) - 10) / 3200, jn = (((l.id * 53) % 21) - 10) / 2400;
+    if (c) { l.lat = c[0] + jl; l.lng = c[1] + jn; }
+    else { l.lat = EHL.lat + (((l.id * 7) % 9) - 4) / 120; l.lng = EHL.lng + (((l.id * 5) % 9) - 4) / 120; }
+  };
   LISTINGS.forEach(setCoords);
 
   /* ---------- state ---------- */
@@ -218,7 +243,7 @@
     const fav = state.favs.has(l.id);
     const ins = priceInsight(l);
     const n = 3;
-    const slides = Array.from({ length: n }, (_, i) => `<div class="slide">${photo(l.id, i + 1)}</div>`).join("");
+    const slides = Array.from({ length: n }, (_, i) => `<div class="slide">${photo(l.id, i + 1, 640, 600, `${l.area} ${KIND_LABEL[l.kind]} near EHL`)}</div>`).join("");
     const dots = Array.from({ length: n }, (_, i) => `<i class="${i === 0 ? "on" : ""}"></i>`).join("");
     return `
     <article class="card" data-id="${l.id}">
@@ -250,7 +275,7 @@
     { id: "campus", name: "Le Chalet-à-Gobet & around", emoji: "🌲", areas: ["Le Chalet-à-Gobet", "Belmont-sur-Lausanne", "Le Mont-sur-Lausanne"], commute: "4–14 min to EHL", rent: "CHF 800–1,250", center: [46.565, 6.68], blurb: "Right at EHL's doorstep, ringed by forest and trails. Mostly shared student flats — roll out of bed and walk to class." },
     { id: "ouchy", name: "Ouchy & the lakefront", emoji: "⛵", areas: ["Ouchy", "Pully", "Lutry"], commute: "22–30 min to EHL", rent: "CHF 1,400–1,650", center: [46.506, 6.645], blurb: "Lausanne's lakeside. Wake up to Lac Léman, walk the promenade, hop the M2. Pricier and a longer ride, but hard to beat for the views." },
     { id: "centre", name: "Centre & Flon", emoji: "🌃", areas: ["Lausanne Centre", "Lausanne Flon"], commute: "25 min to EHL", rent: "CHF 850–1,000", center: [46.5205, 6.631], blurb: "The heart of the action — bars, gym and every metro line at your door. The most social base, with a longer commute as the trade-off." },
-    { id: "west", name: "West side (M1)", emoji: "🚇", areas: ["Renens", "Prilly", "Crissier"], commute: "25–28 min to EHL", rent: "CHF 700–1,150", center: [46.54, 6.59], blurb: "The budget-friendly, well-connected west. The M1 metro links it all and rents are the best value in town — popular with first-years." },
+    { id: "west", name: "West side (M1)", emoji: "🚇", areas: ["Renens", "Prilly", "Crissier", "Ecublens", "Chavannes-près-Renens", "Bussigny", "St-Sulpice"], commute: "24–29 min to EHL", rent: "CHF 690–1,400", center: [46.535, 6.58], blurb: "The budget-friendly, well-connected west — Renens, Ecublens and the UNIL/EPFL belt. The M1 metro links it all and rents are the best value in town, popular with first-years." },
     { id: "riviera", name: "Riviera · Vevey & Montreux", emoji: "🍇", areas: ["Vevey", "Montreux"], commute: "35–38 min to EHL", rent: "CHF 1,380–1,740", center: [46.45, 6.87], blurb: "The scenic stretch toward Montreux. A longer but beautiful train commute, lakefront living, and more space for your money." },
   ];
   function hoodCard(h) {
@@ -288,7 +313,7 @@
       <div class="hood-grid">${HOODS.map(hoodCard).join("")}</div>
     </section>`;
     const savedSec = state.searches.length ? `<section class="ss-sec">
-      <div class="row-head"><div><h2>🔔 Your saved searches</h2><p>Pick up where you left off — tap to run a search again.</p></div></div>
+      <div class="row-head"><div><h2>🔖 Your saved searches</h2><p>Pick up where you left off — tap to run a search again.</p></div></div>
       <div class="ss-list">${state.searches.map((s) => `<button class="ss-chip" data-ss="${s.id}"><span>${s.name}</span><i data-ssrm="${s.id}" aria-label="Remove">✕</i></button>`).join("")}</div>
     </section>` : "";
     $("#homeSections").innerHTML = savedSec + rows + hoods;
@@ -479,9 +504,17 @@
     if (state.view === "results" && state.layout === "map") active = "map";
     document.querySelectorAll("#botnav [data-bn]").forEach((b) => b.classList.toggle("is-active", b.dataset.bn === active));
   }
+  function updateMiniSearch() {
+    const w = $("#msWhere"); if (!w) return;
+    w.textContent = state.where || (state.hood ? state.hood.label : "Anywhere near EHL");
+    const f = state.from, t = state.to;
+    const preset = Object.values(WHEN_PRESETS).find((p) => p.from === f && p.to === t && p.label !== "Any time");
+    $("#msWhen").textContent = preset ? preset.label : f && t ? `${fmtDate(f)}–${fmtDate(t)}` : f ? `From ${fmtDate(f)}` : "Any time";
+    $("#msType").textContent = state.kind !== "any" ? KIND_LABEL[state.kind] : state.type !== "any" ? TYPE_LABEL[state.type] : "Any place";
+  }
 
   function render() {
-    renderCats(); setChrome(); syncControls(); renderChips(); updateBotnav(); updateSavedCount();
+    renderCats(); setChrome(); syncControls(); renderChips(); updateBotnav(); updateMiniSearch(); updateSavedCount();
     if (state.view === "home") { renderHome(); $("#empty").hidden = true; return; }
     if (state.view === "requests") { renderRequests(); $("#empty").hidden = true; return; }
     const list = currentList();
@@ -597,13 +630,13 @@
   }
   function saveCurrentSearch() {
     const name = describeFilters();
-    if (state.searches.some((s) => s.name === name)) { toast("That search is already saved 🔔"); return; }
+    if (state.searches.some((s) => s.name === name)) { toast("You've already saved that search"); return; }
     state.searches.unshift({
       id: "s" + Date.now(), name,
       f: { type: state.type, category: state.category, where: state.where, kind: state.kind, from: state.from, to: state.to, maxPrice: state.maxPrice, maxMinutes: state.maxMinutes, amen: [...state.amen], hood: state.hood ? { id: state.hood.id, label: state.hood.label, areas: [...state.hood.areas] } : null, sort: state.sort },
     });
     saveSearches();
-    toast("🔔 Search saved — find it on your home page");
+    toast("🔖 Saved — find it on your home page");
   }
   function applySavedSearch(id) {
     const s = state.searches.find((x) => x.id === id); if (!s) return;
@@ -639,14 +672,15 @@
   const FLATMATES = [
     ["A", "Anaïs", "2nd year · BOSC"], ["M", "Marc", "3rd year · MIH"], ["S", "Sara", "1st year · BOSC"],
     ["L", "Luca", "Exchange · hospitality"], ["E", "Emma", "Master · F&B"], ["J", "Jonas", "2nd year · BOSC"],
+    ["N", "Noé", "1st year · BOSC"], ["P", "Paula", "Exchange · hospitality"], ["R", "Rafael", "3rd year · BOSC"], ["K", "Klara", "Master · F&B"],
   ];
   function flatmatesHTML(l) {
-    const k = (l.id * 2) % FLATMATES.length, count = 2 + (l.id % 2);
+    const k = (l.id * 3) % FLATMATES.length, count = 2 + (l.id % 2);
     let out = "";
-    for (let i = 0; i < count; i++) { const f = FLATMATES[(k + i) % FLATMATES.length]; out += `<div class="fm"><span class="fm-av">${f[0]}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></div>`; }
+    for (let i = 0; i < count; i++) { const f = FLATMATES[(k + i * 3) % FLATMATES.length]; out += `<div class="fm"><span class="fm-av">${f[0]}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></div>`; }
     return out;
   }
-  const REVIEWERS = [["Camille", "BOSC ’25"], ["Liam", "MIH ’24"], ["Sofia", "BOSC ’26"], ["Noah", "Master ’24"], ["Yuki", "Exchange"], ["Elena", "BOSC ’25"], ["Tom", "MIH ’25"], ["Aïcha", "BOSC ’26"]];
+  const REVIEWERS = [["Camille", "BOSC ’25"], ["Liam", "MIH ’24"], ["Sofia", "BOSC ’26"], ["Noah", "Master ’24"], ["Yuki", "Exchange"], ["Elena", "BOSC ’25"], ["Tom", "MIH ’25"], ["Aïcha", "BOSC ’26"], ["Marco", "BOSC ’24"], ["Hana", "Exchange"], ["Léa", "Master ’25"], ["Jonas", "BOSC ’26"], ["Priya", "MIH ’24"], ["Nina", "BOSC ’25"], ["Felix", "BOSC ’27"], ["Sara", "Master ’24"]];
   const REVIEW_TXT = [
     "Super close to campus and the host replied within minutes. Room was exactly like the photos.",
     "Great value for the area and lovely flatmates — the bus to EHL stops right outside.",
@@ -654,6 +688,12 @@
     "Short commute and close to everything. The host was really flexible on my move-in dates.",
     "Bright room, fast wifi and bills already sorted. Ideal for an internship semester.",
     "Easiest housing search I've had at EHL — and no agency fees made a real difference.",
+    "The host had keys ready on day one and the move-in was completely painless.",
+    "Quieter than I expected for the area — I slept well even in exam season.",
+    "Flatmates turned into friends fast; we end up cooking together most weeks.",
+    "Spotless when I arrived and the listing was honest — zero surprises.",
+    "Loved the morning light and the proper desk setup for studying.",
+    "Transport links are great, so I was never late to an 8am class.",
   ];
   const REV_CATS = ["Cleanliness", "Location", "Value", "Host"];
   const MONTHS_S = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
@@ -663,10 +703,10 @@
       const v = Math.max(4.2, Math.min(5, l.rating + (((l.id * (i + 1)) % 5) - 2) / 20));
       return `<div class="rev-bar"><span>${c}</span><div class="rev-track"><i style="width:${(v / 5) * 100}%"></i></div><b>${v.toFixed(1)}</b></div>`;
     }).join("");
-    const k = l.id % REVIEWERS.length, t = l.id % REVIEW_TXT.length;
+    const k = (l.id * 3) % REVIEWERS.length, t = (l.id * 2) % REVIEW_TXT.length;
     let cards = "";
     for (let i = 0; i < 3; i++) {
-      const r = REVIEWERS[(k + i * 3) % REVIEWERS.length], txt = REVIEW_TXT[(t + i) % REVIEW_TXT.length];
+      const r = REVIEWERS[(k + i * 5) % REVIEWERS.length], txt = REVIEW_TXT[(t + i * 4) % REVIEW_TXT.length];
       cards += `<div class="rev"><div class="rev-top"><span class="rev-av">${r[0][0]}</span><div><b>${r[0]}</b><p>${r[1]} · ${MONTHS_S[(l.id + i) % 6]} 2026</p></div></div><div class="rev-stars">${star.repeat(5)}</div><p class="rev-txt">${txt}</p></div>`;
     }
     return `<div class="rev-head"><span class="rev-score">${star} ${l.rating.toFixed(2)}</span><span class="sep">·</span><span>${l.reviews} student reviews</span></div><div class="rev-bars">${bars}</div><div class="rev-list">${cards}</div>`;
@@ -708,7 +748,7 @@
     const fav = state.favs.has(id);
     const ins = priceInsight(l);
     const deposit = l.price * 2;
-    const gallery = Array.from({ length: 5 }, (_, i) => `<div class="g" data-gp="${i}">${photo(l.id, i + 1, 800, 700)}</div>`).join("");
+    const gallery = Array.from({ length: 5 }, (_, i) => `<div class="g" data-gp="${i}">${photo(l.id, i + 1, 800, 700, `${l.area} ${KIND_LABEL[l.kind]} — photo ${i + 1}`)}</div>`).join("");
     const amens = l.amenities.map((a) => `<div class="amen">${icon(a)}<span>${AMEN_LABEL[a] || a}</span></div>`).join("");
     const term = l.to ? `Available ${fmtDate(l.from)} – ${fmtDate(l.to)}` : `Available from ${fmtDate(l.from)}`;
     const rating = l.reviews ? `<span class="star">${star} ${l.rating.toFixed(2)}</span><span class="sep">·</span><a href="#">${l.reviews} reviews</a>` : `<span class="star">✦ New listing</span>`;
@@ -943,7 +983,6 @@
   $("#miniSearch").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   $(".logo").addEventListener("click", (e) => { e.preventDefault(); goHome(); });
   $("#savedBtn").addEventListener("click", goSaved);
-  $("#globeBtn").addEventListener("click", () => toast("Language: English · Currency: CHF (demo)"));
   $("#themeBtn").addEventListener("click", () => {
     const dark = document.documentElement.getAttribute("data-theme") === "dark";
     if (dark) document.documentElement.removeAttribute("data-theme");
@@ -1129,7 +1168,7 @@
       setCoords(nl); LISTINGS.unshift(nl);
       closeOverlay();
       resetFilters(); state.view = "results"; render(); scrollToContent();
-      toast("🎉 Your listing is live — it's at the top of the results!");
+      toast("🎉 Added to the top of the results (demo — listings reset on refresh)");
       return;
     }
     if (kind === "login" || kind === "signup") {
