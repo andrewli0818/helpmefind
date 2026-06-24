@@ -881,9 +881,16 @@
     const go = e.target.closest("[data-go]"); if (go) { closeOverlay(); nav(go.dataset.go); return; }
     const sub = e.target.closest("[data-submit]"); if (sub) handleSheetSubmit(sub.dataset.submit, e);
   });
+  function trapTab(e, root) {
+    const list = [...root.querySelectorAll('a[href],button:not([disabled]),input:not([type=hidden]),select,textarea,[tabindex]:not([tabindex="-1"])')].filter((el) => el.offsetParent !== null);
+    if (!list.length) return;
+    const first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
   document.addEventListener("keydown", (e) => {
-    if (!lightbox.hidden) { if (e.key === "Escape") closeLightbox(); else if (e.key === "ArrowLeft") lbNav(-1); else if (e.key === "ArrowRight") lbNav(1); return; }
-    if (e.key === "Escape" && !modalRoot.hidden) closeOverlay();
+    if (!lightbox.hidden) { if (e.key === "Escape") closeLightbox(); else if (e.key === "ArrowLeft") lbNav(-1); else if (e.key === "ArrowRight") lbNav(1); else if (e.key === "Tab") trapTab(e, lightbox); return; }
+    if (!modalRoot.hidden) { if (e.key === "Escape") return closeOverlay(); if (e.key === "Tab") trapTab(e, modalRoot); }
   });
 
   function fmtDate(s) {

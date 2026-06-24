@@ -799,6 +799,14 @@ input[type=range]{accent-color:var(--brand);width:100%}
 .faq details[open] summary{color:var(--brand-3)}
 .faq details p{padding:0 2px 18px;font-size:15px;color:var(--ink-2);line-height:1.6}
 
+/* ===================== v17: A11Y + HOVER POLISH ===================== */
+.skip-link{position:fixed;top:-60px;left:12px;z-index:300;background:var(--brand);color:var(--on-brand);font-weight:700;padding:10px 16px;border-radius:10px;transition:top .15s}
+.skip-link:focus{top:12px}
+@media(hover:hover){
+  .card-media .ph img{transition:transform .45s ease}
+  .card:hover .card-media .ph img{transform:scale(1.05)}
+}
+
 /* ===================== v16: POLISH SWEEP ===================== */
 /* gentle photo zoom on hover (hover-capable devices only) */
 @media(hover:hover){
